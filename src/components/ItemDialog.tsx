@@ -1,14 +1,18 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Calendar, CircleDot, Flag, FolderOpen, Plus, Tag, Trash2, X } from 'lucide-react'
+import { ChevronDown, Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { deleteItem, moveItem, updateItem } from '../db/actions'
 import { db } from '../db/db'
 import type { Group, Item, Priority, Status } from '../db/types'
 import { cn } from '../lib/cn'
 import { confirmAction } from '../lib/confirm'
+import { toISODate } from '../lib/dates'
 import { newId } from '../lib/id'
-import { PRIORITY_CLASS, PRIORITY_LABEL } from '../lib/priority'
+import { PRIORITY_LABEL } from '../lib/priority'
+import { tabStyle } from '../lib/tab'
 import { InlineInput } from './InlineInput'
+import { TickBox } from './ItemBits'
+import { Segmented } from './Segmented'
 
 const STATUSES: { value: Status; label: string }[] = [
   { value: 'todo', label: 'To do' },
@@ -16,6 +20,7 @@ const STATUSES: { value: Status; label: string }[] = [
   { value: 'done', label: 'Done' },
 ]
 const PRIORITIES: Priority[] = ['none', 'low', 'medium', 'high']
+const PRIORITY_ACTIVE: Record<Priority, string> = { none: 'text-ink', low: 'text-ink', medium: 'text-warn', high: 'text-danger' }
 
 export function ItemDialog({ itemId, groups, onClose }: { itemId: string; groups: Group[]; onClose: () => void }) {
   const item = useLiveQuery(async () => (await db.items.get(itemId)) ?? null, [itemId])
@@ -37,8 +42,8 @@ export function ItemDialog({ itemId, groups, onClose }: { itemId: string; groups
       onClick={(e) => e.target === ref.current && ref.current.close()}
       aria-label={item?.title ?? 'Item'}
       className={cn(
-        'm-auto w-full max-w-xl rounded-xl border border-border bg-surface p-0 text-text shadow-2xl',
-        'max-sm:h-dvh max-sm:max-h-none max-sm:max-w-none max-sm:rounded-none max-sm:border-0',
+        'm-auto w-[calc(100%-2rem)] max-w-[34rem] overflow-visible rounded-2xl border border-rule-strong bg-card p-0 text-ink shadow-paper',
+        'max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0',
       )}
     >
       {item && <ItemEditor item={item} groups={groups} onClose={() => ref.current?.close()} />}
@@ -48,6 +53,7 @@ export function ItemDialog({ itemId, groups, onClose }: { itemId: string; groups
 
 function ItemEditor({ item, groups, onClose }: { item: Item; groups: Group[]; onClose: () => void }) {
   const save = (patch: Partial<Item>) => updateItem(item.id, patch)
+  const group = groups.find((g) => g.id === item.groupId)
 
   const remove = async () => {
     if (await confirmAction({ title: `Delete "${item.title}"?` })) {
@@ -57,15 +63,14 @@ function ItemEditor({ item, groups, onClose }: { item: Item; groups: Group[]; on
   }
 
   return (
-    <div className="flex flex-col gap-5 p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-2">
-        <label className="flex items-center gap-1.5 text-xs text-muted">
-          <FolderOpen size={14} />
+    <div className="flex max-h-[85dvh] flex-col">
+      <div className="flex items-center justify-between gap-2 px-5 pt-4 sm:px-7" style={group && tabStyle(group)}>
+        <label className="relative flex items-center rounded-md bg-[var(--tab-soft)] text-[13px] font-medium">
           <span className="sr-only">Group</span>
           <select
             value={item.groupId}
             onChange={(e) => moveItem(item.id, e.target.value, null)}
-            className="rounded-md bg-transparent py-1 pr-1 text-xs text-muted outline-none hover:bg-hover"
+            className="appearance-none rounded-md bg-transparent py-1 pr-7 pl-2.5 text-ink outline-none"
           >
             {groups.map((g) => (
               <option key={g.id} value={g.id}>
@@ -73,77 +78,84 @@ function ItemEditor({ item, groups, onClose }: { item: Item; groups: Group[]; on
               </option>
             ))}
           </select>
+          <ChevronDown size={14} className="pointer-events-none absolute right-2 text-ink-2" aria-hidden />
         </label>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <IconButton label="Delete item" onClick={remove} className="hover:text-danger">
-            <Trash2 size={16} />
+            <Trash2 size={17} />
           </IconButton>
           <IconButton label="Close" onClick={onClose}>
-            <X size={18} />
+            <X size={19} />
           </IconButton>
         </div>
       </div>
 
-      <InlineInput
-        value={item.title}
-        onCommit={(title) => save({ title })}
-        multiline
-        aria-label="Title"
-        placeholder="Untitled"
-        className="text-xl font-semibold leading-snug"
-      />
-
-      <div className="grid grid-cols-[7.5rem_1fr] items-center gap-x-3 gap-y-3 text-sm">
-        <PropLabel icon={<CircleDot size={14} />}>Status</PropLabel>
-        <Segmented
-          label="Status"
-          options={STATUSES}
-          value={item.status}
-          onChange={(status) => save({ status })}
-        />
-
-        <PropLabel icon={<Flag size={14} />}>Priority</PropLabel>
-        <Segmented
-          label="Priority"
-          options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABEL[p], className: PRIORITY_CLASS[p] }))}
-          value={item.priority}
-          onChange={(priority) => save({ priority })}
-        />
-
-        <PropLabel icon={<Calendar size={14} />}>Due date</PropLabel>
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            aria-label="Due date"
-            value={item.dueDate ?? ''}
-            onChange={(e) => save({ dueDate: e.target.value || null })}
-            className="rounded-md border border-border bg-transparent px-2 py-1 text-sm outline-none focus:border-accent"
-          />
-          {item.dueDate && (
-            <button type="button" onClick={() => save({ dueDate: null })} className="text-xs text-muted hover:text-text">
-              Clear
-            </button>
-          )}
-        </div>
-
-        <PropLabel icon={<Tag size={14} />}>Tags</PropLabel>
-        <TagEditor tags={item.tags} onChange={(tags) => save({ tags })} />
-      </div>
-
-      <Checklist item={item} />
-
-      <div className="flex flex-col gap-1.5">
-        <h3 className="text-xs font-medium text-muted">Notes</h3>
+      <div className="flex flex-col gap-6 overflow-y-auto px-5 pt-3 pb-7 sm:px-7">
         <InlineInput
-          key={item.id}
-          value={item.notes}
-          onCommit={(notes) => save({ notes })}
-          multiline
-          allowEmpty
-          placeholder="Add notes…"
-          aria-label="Notes"
-          className="min-h-24 rounded-md border border-border px-3 py-2 text-sm leading-relaxed focus:border-accent"
+          value={item.title}
+          onCommit={(title) => save({ title })}
+          wrap
+          aria-label="Title"
+          placeholder="Untitled"
+          className={cn('font-display text-[1.6rem] leading-tight', item.status === 'done' && 'text-ink-2')}
         />
+
+        <dl className="grid grid-cols-[6.5rem_1fr] items-center border-t border-rule text-sm [&>*]:min-h-12 [&>*]:border-b [&>*]:border-rule [&>dd]:flex [&>dd]:items-center [&>dt]:flex [&>dt]:items-center [&>dt]:text-ink-2">
+          <dt>Status</dt>
+          <dd>
+            <Segmented size="sm" label="Status" options={STATUSES} value={item.status} onChange={(status) => save({ status })} />
+          </dd>
+
+          <dt>Priority</dt>
+          <dd>
+            <Segmented
+              size="sm"
+              label="Priority"
+              options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABEL[p], className: PRIORITY_ACTIVE[p] }))}
+              value={item.priority}
+              onChange={(priority) => save({ priority })}
+            />
+          </dd>
+
+          <dt>Due</dt>
+          <dd className="flex-wrap gap-x-3 gap-y-1 py-2">
+            <input
+              type="date"
+              aria-label="Due date"
+              value={item.dueDate ?? ''}
+              onChange={(e) => save({ dueDate: e.target.value || null })}
+              className="rounded-md border border-rule-strong bg-transparent px-2 py-1 text-sm outline-none focus:border-accent"
+            />
+            {item.dueDate ? (
+              <TextButton onClick={() => save({ dueDate: null })}>Clear</TextButton>
+            ) : (
+              <>
+                <TextButton onClick={() => save({ dueDate: toISODate() })}>Today</TextButton>
+                <TextButton onClick={() => save({ dueDate: toISODate(new Date(Date.now() + 86_400_000)) })}>Tomorrow</TextButton>
+              </>
+            )}
+          </dd>
+
+          <dt>Tags</dt>
+          <dd className="py-2">
+            <TagEditor tags={item.tags} onChange={(tags) => save({ tags })} />
+          </dd>
+        </dl>
+
+        <Checklist item={item} />
+
+        <section className="flex flex-col gap-1">
+          <h3 className="font-display text-base">Notes</h3>
+          <InlineInput
+            value={item.notes}
+            onCommit={(notes) => save({ notes })}
+            multiline
+            allowEmpty
+            placeholder="Write anything: links, details, ideas"
+            aria-label="Notes"
+            className="lined min-h-[7rem] text-[15px]"
+          />
+        </section>
       </div>
     </div>
   )
@@ -156,50 +168,18 @@ function IconButton({ label, onClick, children, className }: { label: string; on
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={cn('flex size-8 items-center justify-center rounded-md text-muted hover:bg-hover hover:text-text', className)}
+      className={cn('flex size-9 items-center justify-center rounded-md text-ink-2 hover:bg-hover hover:text-ink', className)}
     >
       {children}
     </button>
   )
 }
 
-function PropLabel({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+function TextButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
   return (
-    <span className="flex items-center gap-2 text-muted">
-      {icon} {children}
-    </span>
-  )
-}
-
-function Segmented<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string
-  options: { value: T; label: string; className?: string }[]
-  value: T
-  onChange: (value: T) => void
-}) {
-  return (
-    <div role="radiogroup" aria-label={label} className="flex w-fit flex-wrap rounded-lg bg-surface-2 p-0.5">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            'rounded-md px-2.5 py-1 text-xs font-medium',
-            value === o.value ? cn('bg-surface shadow-sm', o.className ?? 'text-text') : 'text-muted hover:text-text',
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <button type="button" onClick={onClick} className="text-[13px] text-ink-2 underline decoration-rule-strong underline-offset-4 hover:text-accent hover:decoration-accent">
+      {children}
+    </button>
   )
 }
 
@@ -213,12 +193,17 @@ function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-1 flex-wrap items-center gap-1.5">
       {tags.map((tag) => (
-        <span key={tag} className="flex items-center gap-1 rounded bg-surface-2 py-0.5 pr-1 pl-2 text-xs">
+        <span key={tag} className="flex items-center gap-1 rounded-full bg-tint py-0.5 pr-1 pl-2.5 text-[13px]">
           #{tag}
-          <button type="button" aria-label={`Remove tag ${tag}`} onClick={() => onChange(tags.filter((t) => t !== tag))} className="text-faint hover:text-text">
-            <X size={12} />
+          <button
+            type="button"
+            aria-label={`Remove tag ${tag}`}
+            onClick={() => onChange(tags.filter((t) => t !== tag))}
+            className="flex size-4 items-center justify-center rounded-full text-ink-3 hover:bg-hover hover:text-ink"
+          >
+            <X size={11} />
           </button>
         </span>
       ))}
@@ -234,9 +219,9 @@ function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string
           }
         }}
         onBlur={add}
-        placeholder={tags.length ? '' : 'Add a tag…'}
+        placeholder={tags.length ? '' : 'Add a tag'}
         aria-label="Add tag"
-        className="min-w-20 flex-1 bg-transparent py-0.5 text-sm outline-none placeholder:text-faint"
+        className="min-w-20 flex-1 bg-transparent py-0.5 text-sm outline-none placeholder:text-ink-3"
       />
     </div>
   )
@@ -255,59 +240,53 @@ function Checklist({ item }: { item: Item }) {
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <h3 className="flex items-center justify-between text-xs font-medium text-muted">
-        Checklist
+    <section className="flex flex-col gap-1.5">
+      <h3 className="flex items-baseline justify-between font-display text-base">
+        Steps
         {list.length > 0 && (
-          <span className="tabular-nums">
-            {done}/{list.length}
+          <span className="font-sans text-[13px] text-ink-2 tabular-nums">
+            {done} of {list.length}
           </span>
         )}
       </h3>
-      {list.length > 0 && (
-        <div className="h-1 overflow-hidden rounded-full bg-surface-2">
-          <div className="h-full bg-ok transition-all" style={{ width: `${(done / list.length) * 100}%` }} />
-        </div>
-      )}
       <ul className="flex flex-col">
         {list.map((entry) => (
-          <li key={entry.id} className="group/check flex items-center gap-2 rounded-md px-1 py-0.5 hover:bg-hover">
-            <input
-              type="checkbox"
+          <li key={entry.id} className="group/step flex min-h-10 items-center gap-3 border-b border-rule">
+            <TickBox
+              size={16}
               checked={entry.done}
-              aria-label={`Done: ${entry.text}`}
-              onChange={() => save(list.map((c) => (c.id === entry.id ? { ...c, done: !c.done } : c)))}
-              className="size-4 accent-[var(--accent)]"
+              label={`Done: ${entry.text}`}
+              onToggle={() => save(list.map((c) => (c.id === entry.id ? { ...c, done: !c.done } : c)))}
             />
             <InlineInput
               value={entry.text}
               onCommit={(value) => save(list.map((c) => (c.id === entry.id ? { ...c, text: value } : c)))}
-              aria-label="Checklist entry"
-              className={cn('flex-1 text-sm', entry.done && 'text-faint line-through')}
+              aria-label="Step"
+              className={cn('flex-1 text-[15px]', entry.done && 'text-ink-3')}
             />
             <button
               type="button"
               aria-label={`Remove ${entry.text}`}
               onClick={() => save(list.filter((c) => c.id !== entry.id))}
-              className="text-faint opacity-0 group-hover/check:opacity-100 hover:text-danger focus:opacity-100 max-sm:opacity-100"
+              className="flex size-7 items-center justify-center rounded-md text-ink-3 opacity-0 group-hover/step:opacity-100 hover:text-danger focus:opacity-100 max-sm:opacity-100"
             >
               <X size={14} />
             </button>
           </li>
         ))}
       </ul>
-      <div className="flex items-center gap-2 px-1">
-        <Plus size={16} className="text-faint" />
+      <label className="flex min-h-10 items-center gap-3 text-ink-3 focus-within:text-accent">
+        <Plus size={16} aria-hidden />
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && add()}
           onBlur={add}
-          placeholder="Add a step…"
-          aria-label="Add checklist step"
-          className="flex-1 bg-transparent py-0.5 text-sm outline-none placeholder:text-faint"
+          placeholder="Add a step"
+          aria-label="Add a step"
+          className="flex-1 bg-transparent text-[15px] text-ink caret-accent outline-none placeholder:text-ink-3"
         />
-      </div>
-    </div>
+      </label>
+    </section>
   )
 }

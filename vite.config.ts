@@ -11,7 +11,8 @@ const artifact = process.env.BUILD_TARGET === 'artifact'
 // https://vite.dev/config/
 export default defineConfig({
   base: artifact ? './' : '/',
-  build: artifact ? { outDir: 'dist-artifact' } : {},
+  // Fonts are inlined too: the artifact viewer only allows font files from Google Fonts.
+  build: artifact ? { outDir: 'dist-artifact', assetsInlineLimit: 200_000 } : {},
   plugins: [
     react(),
     tailwindcss(),
@@ -23,8 +24,8 @@ export default defineConfig({
           name: 'Planvoice',
           short_name: 'Planvoice',
           description: 'Plans, groups and to-dos — with voice input.',
-          theme_color: '#191919',
-          background_color: '#191919',
+          theme_color: '#1c2541',
+          background_color: '#fbfcfd',
           display: 'standalone',
           icons: [
             { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },

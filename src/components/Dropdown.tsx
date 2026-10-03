@@ -35,10 +35,11 @@ export function Dropdown({ label, ariaLabel, children, align = 'right', buttonCl
       <button
         type="button"
         aria-label={ariaLabel}
+        title={ariaLabel}
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((o) => !o)}
-        className={cn('flex items-center justify-center rounded-md text-muted hover:bg-hover hover:text-text', buttonClassName ?? 'size-7')}
+        className={cn('flex items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-hover hover:text-ink', buttonClassName ?? 'size-8')}
       >
         {label}
       </button>
@@ -46,7 +47,7 @@ export function Dropdown({ label, ariaLabel, children, align = 'right', buttonCl
         <div
           role="menu"
           className={cn(
-            'absolute top-full z-50 mt-1 min-w-44 rounded-lg border border-border bg-surface p-1 shadow-lg',
+            'absolute top-full z-50 mt-1.5 min-w-48 rounded-[10px] border border-rule-strong bg-card p-1.5 shadow-paper',
             align === 'right' ? 'right-0' : 'left-0',
             menuClassName,
           )}
@@ -64,7 +65,7 @@ export function MenuItem({ onClick, children, danger }: { onClick: () => void; c
       type="button"
       role="menuitem"
       onClick={onClick}
-      className={cn('flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-hover', danger ? 'text-danger' : 'text-text')}
+      className={cn('flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm hover:bg-hover', danger ? 'text-danger' : 'text-ink')}
     >
       {children}
     </button>
@@ -72,5 +73,5 @@ export function MenuItem({ onClick, children, danger }: { onClick: () => void; c
 }
 
 export function MenuSeparator() {
-  return <div className="my-1 h-px bg-border" />
+  return <div className="mx-1 my-1.5 h-px bg-rule" />
 }

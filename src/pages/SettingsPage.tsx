@@ -46,13 +46,13 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-8 md:px-12 md:py-14">
-      <h1 className="text-3xl font-bold tracking-tight">Settings &amp; backup</h1>
+    <div className="mx-auto flex max-w-[40rem] flex-col gap-10 px-4 pt-9 pb-16 md:px-14 md:pt-16">
+      <h1 className="font-display text-[2.1rem] leading-tight md:text-[2.6rem]">Settings &amp; backup</h1>
 
-      <Section title="Storage">
-        <p className="text-sm text-muted">
-          Your plans are stored only in this browser on this device. Nothing is uploaded. Export a backup now and then, and before clearing
-          browser data.
+      <Section title="Where your plans live">
+        <p className="max-w-[60ch] text-ink-2">
+          Only in this browser, on this device. Nothing is uploaded and there is no account. Clearing your browser data erases them, so
+          export a backup now and then.
         </p>
       </Section>
 
@@ -62,7 +62,7 @@ export function SettingsPage() {
             <Download size={16} /> Export backup
           </Button>
           <Button onClick={() => fileInput.current?.click()}>
-            <Upload size={16} /> Restore from backup…
+            <Upload size={16} /> Restore a backup
           </Button>
           <input
             ref={fileInput}
@@ -83,8 +83,9 @@ export function SettingsPage() {
         )}
       </Section>
 
-      <Section title="Danger zone">
-        <Button onClick={wipe} className="text-danger">
+      <Section title="Start over">
+        <p className="text-ink-2">Delete every plan, group and item on this device.</p>
+        <Button onClick={wipe} className="text-danger hover:border-danger">
           <Trash2 size={16} /> Delete all data
         </Button>
       </Section>
@@ -94,8 +95,8 @@ export function SettingsPage() {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="border-b border-border pb-1.5 text-sm font-semibold">{title}</h2>
+    <section className="flex flex-col gap-3 border-t border-rule pt-5">
+      <h2 className="font-display text-lg">{title}</h2>
       {children}
     </section>
   )
@@ -106,7 +107,7 @@ function Button({ onClick, children, className }: { onClick: () => void; childre
     <button
       type="button"
       onClick={onClick}
-      className={cn('flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-hover', className)}
+      className={cn('flex h-9 w-fit items-center gap-2 rounded-lg border border-rule-strong bg-card px-3.5 text-sm font-medium shadow-paper hover:border-ink-3', className)}
     >
       {children}
     </button>

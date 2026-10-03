@@ -17,16 +17,18 @@ export function HomePage() {
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-      <div className="text-5xl">📋</div>
-      <h1 className="text-2xl font-bold">No plans yet</h1>
-      <p className="max-w-sm text-sm text-muted">A plan holds groups (like “Flights” or “Things to do”), and groups hold your items.</p>
+    <div className="mx-auto flex h-full max-w-[30rem] flex-col justify-center gap-5 px-6 py-12">
+      <h1 className="font-display text-[2.2rem] leading-tight">A blank page.</h1>
+      <p className="text-ink-2">
+        Start a plan for whatever is on your mind: a trip, a move, a project, this week. Split it into groups like
+        <span className="text-ink"> Flights</span> or <span className="text-ink">Things to do</span>, then add items to each.
+      </p>
       <button
         type="button"
         onClick={start}
-        className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg hover:opacity-90"
+        className="flex h-10 w-fit items-center gap-2 rounded-lg bg-accent px-4 text-[15px] font-semibold text-accent-ink hover:brightness-110"
       >
-        <Plus size={16} /> Create your first plan
+        <Plus size={17} /> Start a plan
       </button>
     </div>
   )

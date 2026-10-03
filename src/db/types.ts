@@ -2,15 +2,16 @@ export type Status = 'todo' | 'doing' | 'done'
 export type Priority = 'none' | 'low' | 'medium' | 'high'
 export type ViewMode = 'list' | 'board'
 
+// Divider-tab colours. Keys are stored in the database, so rename values, never keys.
 export const GROUP_COLORS = {
-  gray: '#8a8a85',
-  blue: '#3b82f6',
-  green: '#3fa66b',
-  orange: '#e0823d',
-  purple: '#8b5cf6',
-  pink: '#d9568f',
-  yellow: '#d4a72c',
-  red: '#e5534b',
+  gray: '#6f7a90',
+  blue: '#3767d6',
+  green: '#2f9461',
+  orange: '#dd7424',
+  purple: '#8657d3',
+  pink: '#cf4f8b',
+  yellow: '#c49306',
+  red: '#d0443e',
 } as const
 
 export type GroupColor = keyof typeof GROUP_COLORS

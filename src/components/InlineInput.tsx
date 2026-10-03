@@ -9,6 +9,8 @@ interface Props {
   /** When false (the default), clearing the field reverts to the previous value. */
   allowEmpty?: boolean
   multiline?: boolean
+  /** Wraps like a textarea but stays one line: Enter saves, newlines are dropped. */
+  wrap?: boolean
   /** Focus and select the text on mount, so typing replaces it. */
   autoFocus?: boolean
   'aria-label'?: string
@@ -18,7 +20,7 @@ interface Props {
  * A borderless, always-editable text field (Notion style). Edits are kept
  * locally and saved on blur, Enter (single-line), or unmount.
  */
-export function InlineInput({ value, onCommit, placeholder, className, allowEmpty, multiline, autoFocus, ...rest }: Props) {
+export function InlineInput({ value, onCommit, placeholder, className, allowEmpty, multiline, wrap, autoFocus, ...rest }: Props) {
   const [draft, setDraft] = useState(value)
   const [synced, setSynced] = useState(value)
   if (synced !== value) {
@@ -28,7 +30,7 @@ export function InlineInput({ value, onCommit, placeholder, className, allowEmpt
   }
 
   const commit = (text: string) => {
-    const next = multiline ? text.trimEnd() : text.trim()
+    const next = multiline && !wrap ? text.trimEnd() : text.trim()
     if (!next && !allowEmpty) {
       setDraft(value)
       return
@@ -55,7 +57,8 @@ export function InlineInput({ value, onCommit, placeholder, className, allowEmpt
       e.currentTarget.blur()
       e.preventDefault()
       e.stopPropagation()
-    } else if (e.key === 'Enter' && !multiline && !e.nativeEvent.isComposing) {
+    } else if (e.key === 'Enter' && (!multiline || wrap) && !e.nativeEvent.isComposing) {
+      e.preventDefault()
       e.currentTarget.blur()
     }
   }
@@ -66,10 +69,10 @@ export function InlineInput({ value, onCommit, placeholder, className, allowEmpt
     autoFocus,
     onFocus: autoFocus ? (e: { currentTarget: HTMLInputElement | HTMLTextAreaElement }) => e.currentTarget.select() : undefined,
     'aria-label': rest['aria-label'] ?? placeholder,
-    onChange: (e: { target: { value: string } }) => setDraft(e.target.value),
+    onChange: (e: { target: { value: string } }) => setDraft(wrap ? e.target.value.replace(/\n/g, ' ') : e.target.value),
     onBlur: () => commit(draft),
     onKeyDown,
-    className: cn('w-full bg-transparent outline-none placeholder:text-faint', className),
+    className: cn('w-full bg-transparent outline-none placeholder:text-ink-3', className),
   }
-  return multiline ? <textarea rows={1} {...shared} className={cn(shared.className, 'resize-none [field-sizing:content]')} /> : <input {...shared} />
+  return multiline || wrap ? <textarea rows={1} {...shared} className={cn(shared.className, 'shrink-0 resize-none [field-sizing:content]')} /> : <input {...shared} />
 }

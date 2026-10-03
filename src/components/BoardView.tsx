@@ -1,6 +1,8 @@
 import { DndContext, DragOverlay } from '@dnd-kit/core'
 import { addItem, createGroup } from '../db/actions'
 import type { Group, Item } from '../db/types'
+import type { GroupCounts } from './counts'
+import { tabStyle } from '../lib/tab'
 import { GroupDropZone, GroupHeader } from './GroupBits'
 import { ItemCard } from './ItemViews'
 import { QuickAdd } from './QuickAdd'
@@ -10,38 +12,44 @@ interface Props {
   planId: string
   groups: Group[]
   items: Item[]
-  totals: Map<string, number>
+  counts: GroupCounts
   onOpen: (id: string) => void
 }
 
-export function BoardView({ planId, groups, items, totals, onOpen }: Props) {
+export function BoardView({ planId, groups, items, counts, onOpen }: Props) {
   const { columns, itemsById, activeItem, dndProps } = useItemDnd(groups, items)
 
   return (
-    <div className="flex items-start gap-3 overflow-x-auto px-4 pb-6 md:px-12">
+    <div className="flex items-start gap-5 overflow-x-auto px-4 pt-1 pb-8 md:px-14">
       <DndContext {...dndProps}>
         {groups.map((group, index) => {
           const ids = columns[group.id] ?? []
+          const count = counts.get(group.id)
           return (
-            <section key={group.id} aria-label={group.name} className="flex w-72 shrink-0 flex-col gap-2 rounded-xl bg-surface-2/60 p-2">
-              <div className="px-1 pt-1">
-                <GroupHeader group={group} index={index} groupCount={groups.length} itemCount={totals.get(group.id) ?? 0} horizontal />
-              </div>
-              <GroupDropZone groupId={group.id} itemIds={ids} className="flex min-h-10 flex-col gap-2">
+            <section key={group.id} aria-label={group.name} style={tabStyle(group)} className="flex w-[17.5rem] shrink-0 flex-col gap-3">
+              <GroupHeader
+                group={group}
+                index={index}
+                groupCount={groups.length}
+                itemCount={count?.total ?? 0}
+                doneCount={count?.done ?? 0}
+                horizontal
+              />
+              <GroupDropZone groupId={group.id} itemIds={ids} className="flex min-h-12 flex-col gap-2.5 rounded-md">
                 {ids.map((id) => {
                   const item = itemsById.get(id)
                   return item && <ItemCard key={id} item={item} onOpen={onOpen} />
                 })}
               </GroupDropZone>
-              <QuickAdd label="Add item" placeholder="Item title, then Enter" onAdd={(title) => addItem(group.id, { title })} />
+              <QuickAdd variant="card" label="Add an item" placeholder="What needs doing?" onAdd={(title) => addItem(group.id, { title })} />
             </section>
           )
         })}
         <DragOverlay>{activeItem && <ItemCard item={activeItem} onOpen={onOpen} overlay />}</DragOverlay>
       </DndContext>
 
-      <div className="w-72 shrink-0">
-        <QuickAdd label="Add group" placeholder="Group name, then Enter" onAdd={(name) => createGroup(planId, name)} className="font-medium" />
+      <div className="w-[17.5rem] shrink-0">
+        <QuickAdd variant="tab" label="New group" placeholder="Group name" onAdd={(name) => createGroup(planId, name)} />
       </div>
     </div>
   )
