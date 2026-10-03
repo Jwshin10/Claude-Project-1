@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
 import { cn } from '../lib/cn'
 
 interface Props {
@@ -13,14 +13,15 @@ interface Props {
   wrap?: boolean
   /** Focus and select the text on mount, so typing replaces it. */
   autoFocus?: boolean
+  style?: CSSProperties
   'aria-label'?: string
 }
 
 /**
- * A borderless, always-editable text field (Notion style). Edits are kept
+ * A borderless, always-editable text field. Edits are kept
  * locally and saved on blur, Enter (single-line), or unmount.
  */
-export function InlineInput({ value, onCommit, placeholder, className, allowEmpty, multiline, wrap, autoFocus, ...rest }: Props) {
+export function InlineInput({ value, onCommit, placeholder, className, allowEmpty, multiline, wrap, autoFocus, style, ...rest }: Props) {
   const [draft, setDraft] = useState(value)
   const [synced, setSynced] = useState(value)
   if (synced !== value) {
@@ -67,12 +68,13 @@ export function InlineInput({ value, onCommit, placeholder, className, allowEmpt
     value: draft,
     placeholder,
     autoFocus,
+    style,
     onFocus: autoFocus ? (e: { currentTarget: HTMLInputElement | HTMLTextAreaElement }) => e.currentTarget.select() : undefined,
     'aria-label': rest['aria-label'] ?? placeholder,
     onChange: (e: { target: { value: string } }) => setDraft(wrap ? e.target.value.replace(/\n/g, ' ') : e.target.value),
     onBlur: () => commit(draft),
     onKeyDown,
-    className: cn('w-full bg-transparent outline-none placeholder:text-ink-3', className),
+    className: cn('w-full bg-transparent outline-none placeholder:text-label-3', className),
   }
   return multiline || wrap ? <textarea rows={1} {...shared} className={cn(shared.className, 'shrink-0 resize-none [field-sizing:content]')} /> : <input {...shared} />
 }

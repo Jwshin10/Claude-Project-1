@@ -1,27 +1,28 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChevronDown, Plus, Trash2, X } from 'lucide-react'
+import { ChevronsUpDown, Plus, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { deleteItem, moveItem, updateItem } from '../db/actions'
 import { db } from '../db/db'
-import type { Group, Item, Priority, Status } from '../db/types'
+import { colorVar, type Group, type Item, type Priority, type Status } from '../db/types'
 import { cn } from '../lib/cn'
 import { confirmAction } from '../lib/confirm'
 import { toISODate } from '../lib/dates'
 import { newId } from '../lib/id'
 import { PRIORITY_LABEL } from '../lib/priority'
-import { tabStyle } from '../lib/tab'
+import { GroupedRow, GroupedSection } from './Chrome'
 import { InlineInput } from './InlineInput'
-import { TickBox } from './ItemBits'
+import { CheckCircle } from './ItemBits'
 import { Segmented } from './Segmented'
+import { Toggle } from './Toggle'
 
 const STATUSES: { value: Status; label: string }[] = [
-  { value: 'todo', label: 'To do' },
-  { value: 'doing', label: 'In progress' },
+  { value: 'todo', label: 'To Do' },
+  { value: 'doing', label: 'In Progress' },
   { value: 'done', label: 'Done' },
 ]
 const PRIORITIES: Priority[] = ['none', 'low', 'medium', 'high']
-const PRIORITY_ACTIVE: Record<Priority, string> = { none: 'text-ink', low: 'text-ink', medium: 'text-warn', high: 'text-danger' }
 
+/** Item details, presented as a sheet. Changes save as you make them. */
 export function ItemDialog({ itemId, groups, onClose }: { itemId: string; groups: Group[]; onClose: () => void }) {
   const item = useLiveQuery(async () => (await db.items.get(itemId)) ?? null, [itemId])
   const ref = useRef<HTMLDialogElement>(null)
@@ -40,146 +41,141 @@ export function ItemDialog({ itemId, groups, onClose }: { itemId: string; groups
       ref={ref}
       onClose={onClose}
       onClick={(e) => e.target === ref.current && ref.current.close()}
-      aria-label={item?.title ?? 'Item'}
+      aria-labelledby="details-title"
       className={cn(
-        'm-auto w-[calc(100%-2rem)] max-w-[34rem] overflow-visible rounded-2xl border border-rule-strong bg-card p-0 text-ink shadow-paper',
-        'max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0',
+        'sheet anim-sheet m-auto w-[calc(100%-2rem)] max-w-[33rem] overflow-hidden rounded-[18px] bg-grouped p-0 text-label shadow-float',
+        'max-md:mt-auto max-md:mb-0 max-md:w-full max-md:max-w-none max-md:rounded-b-none',
       )}
     >
-      {item && <ItemEditor item={item} groups={groups} onClose={() => ref.current?.close()} />}
+      {item && <Details item={item} groups={groups} onClose={() => ref.current?.close()} />}
     </dialog>
   )
 }
 
-function ItemEditor({ item, groups, onClose }: { item: Item; groups: Group[]; onClose: () => void }) {
+function Details({ item, groups, onClose }: { item: Item; groups: Group[]; onClose: () => void }) {
   const save = (patch: Partial<Item>) => updateItem(item.id, patch)
-  const group = groups.find((g) => g.id === item.groupId)
+  const color = colorVar(groups.find((g) => g.id === item.groupId)?.color ?? 'blue')
 
   const remove = async () => {
-    if (await confirmAction({ title: `Delete "${item.title}"?` })) {
+    if (await confirmAction({ title: `Delete “${item.title}”?`, message: 'You can’t undo this.', confirmLabel: 'Delete' })) {
       onClose()
       void deleteItem(item.id)
     }
   }
 
   return (
-    <div className="flex max-h-[85dvh] flex-col">
-      <div className="flex items-center justify-between gap-2 px-5 pt-4 sm:px-7" style={group && tabStyle(group)}>
-        <label className="relative flex items-center rounded-md bg-[var(--tab-soft)] text-[13px] font-medium">
-          <span className="sr-only">Group</span>
-          <select
-            value={item.groupId}
-            onChange={(e) => moveItem(item.id, e.target.value, null)}
-            className="appearance-none rounded-md bg-transparent py-1 pr-7 pl-2.5 text-ink outline-none"
-          >
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={14} className="pointer-events-none absolute right-2 text-ink-2" aria-hidden />
-        </label>
-        <div className="flex items-center gap-0.5">
-          <IconButton label="Delete item" onClick={remove} className="hover:text-danger">
-            <Trash2 size={17} />
-          </IconButton>
-          <IconButton label="Close" onClick={onClose}>
-            <X size={19} />
-          </IconButton>
-        </div>
+    <div className="flex max-h-[85dvh] flex-col max-md:max-h-[94dvh]">
+      <div className="mx-auto mt-[5px] h-[5px] w-9 rounded-full bg-label-3 md:hidden" aria-hidden />
+      <div className="grid h-[52px] shrink-0 grid-cols-[1fr_auto_1fr] items-center px-4">
+        <span />
+        <h2 id="details-title" className="text-headline font-semibold">
+          Details
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          title="Close"
+          className="flex size-[30px] items-center justify-center justify-self-end rounded-full bg-fill-3 text-label-2 hover:bg-fill-2"
+        >
+          <X size={16} strokeWidth={2.6} />
+        </button>
       </div>
 
-      <div className="flex flex-col gap-6 overflow-y-auto px-5 pt-3 pb-7 sm:px-7">
-        <InlineInput
-          value={item.title}
-          onCommit={(title) => save({ title })}
-          wrap
-          aria-label="Title"
-          placeholder="Untitled"
-          className={cn('font-display text-[1.6rem] leading-tight', item.status === 'done' && 'text-ink-2')}
-        />
-
-        <dl className="grid grid-cols-[6.5rem_1fr] items-center border-t border-rule text-sm [&>*]:min-h-12 [&>*]:border-b [&>*]:border-rule [&>dd]:flex [&>dd]:items-center [&>dt]:flex [&>dt]:items-center [&>dt]:text-ink-2">
-          <dt>Status</dt>
-          <dd>
-            <Segmented size="sm" label="Status" options={STATUSES} value={item.status} onChange={(status) => save({ status })} />
-          </dd>
-
-          <dt>Priority</dt>
-          <dd>
-            <Segmented
-              size="sm"
-              label="Priority"
-              options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABEL[p], className: PRIORITY_ACTIVE[p] }))}
-              value={item.priority}
-              onChange={(priority) => save({ priority })}
+      <div className="flex flex-col gap-6 overflow-y-auto px-4 pt-1 pb-8">
+        <GroupedSection>
+          <div className="px-4 pt-3 pb-2">
+            <InlineInput value={item.title} onCommit={(title) => save({ title })} wrap aria-label="Title" placeholder="Title" className="text-body font-semibold" />
+          </div>
+          <div className="ml-4 border-t border-separator pt-2 pr-4 pb-3">
+            <InlineInput
+              value={item.notes}
+              onCommit={(notes) => save({ notes })}
+              multiline
+              allowEmpty
+              placeholder="Notes"
+              aria-label="Notes"
+              className="min-h-[4.5rem] text-subhead text-label-2"
             />
-          </dd>
+          </div>
+        </GroupedSection>
 
-          <dt>Due</dt>
-          <dd className="flex-wrap gap-x-3 gap-y-1 py-2">
-            <input
-              type="date"
-              aria-label="Due date"
-              value={item.dueDate ?? ''}
-              onChange={(e) => save({ dueDate: e.target.value || null })}
-              className="rounded-md border border-rule-strong bg-transparent px-2 py-1 text-sm outline-none focus:border-accent"
-            />
-            {item.dueDate ? (
-              <TextButton onClick={() => save({ dueDate: null })}>Clear</TextButton>
-            ) : (
-              <>
-                <TextButton onClick={() => save({ dueDate: toISODate() })}>Today</TextButton>
-                <TextButton onClick={() => save({ dueDate: toISODate(new Date(Date.now() + 86_400_000)) })}>Tomorrow</TextButton>
-              </>
-            )}
-          </dd>
+        <GroupedSection>
+          <GroupedRow className="flex-wrap justify-between py-2">
+            <span>Status</span>
+            <Segmented label="Status" className="max-md:w-full" options={STATUSES} value={item.status} onChange={(status) => save({ status })} />
+          </GroupedRow>
+          <GroupedRow className="justify-between">
+            <span>Priority</span>
+            <PopUp label="Priority" value={item.priority} onChange={(priority) => save({ priority: priority as Priority })}>
+              {PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {PRIORITY_LABEL[p]}
+                </option>
+              ))}
+            </PopUp>
+          </GroupedRow>
+          <GroupedRow className="justify-between">
+            <span className="flex flex-col">
+              Date
+              {item.dueDate && <span className="text-footnote text-tint">{formatLong(item.dueDate)}</span>}
+            </span>
+            <Toggle label="Date" checked={!!item.dueDate} onChange={(on) => save({ dueDate: on ? toISODate() : null })} />
+          </GroupedRow>
+          {item.dueDate && (
+            <GroupedRow className="justify-end py-1.5">
+              <input
+                type="date"
+                aria-label="Due date"
+                value={item.dueDate}
+                onChange={(e) => save({ dueDate: e.target.value || null })}
+                className="h-[34px] rounded-[8px] bg-fill-3 px-2.5 text-body text-tint outline-none"
+              />
+            </GroupedRow>
+          )}
+          <GroupedRow className="justify-between">
+            <span>Group</span>
+            <PopUp label="Group" value={item.groupId} onChange={(groupId) => moveItem(item.id, groupId, null)}>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </PopUp>
+          </GroupedRow>
+        </GroupedSection>
 
-          <dt>Tags</dt>
-          <dd className="py-2">
-            <TagEditor tags={item.tags} onChange={(tags) => save({ tags })} />
-          </dd>
-        </dl>
+        <GroupedSection header="Tags">
+          <TagEditor tags={item.tags} onChange={(tags) => save({ tags })} />
+        </GroupedSection>
 
-        <Checklist item={item} />
+        <Steps item={item} color={color} />
 
-        <section className="flex flex-col gap-1">
-          <h3 className="font-display text-base">Notes</h3>
-          <InlineInput
-            value={item.notes}
-            onCommit={(notes) => save({ notes })}
-            multiline
-            allowEmpty
-            placeholder="Write anything: links, details, ideas"
-            aria-label="Notes"
-            className="lined min-h-[7rem] text-[15px]"
-          />
-        </section>
+        <GroupedSection>
+          <button type="button" onClick={remove} className="h-11 w-full text-center text-body text-red hover:bg-fill-4">
+            Delete Item
+          </button>
+        </GroupedSection>
       </div>
     </div>
   )
 }
 
-function IconButton({ label, onClick, children, className }: { label: string; onClick: () => void; children: ReactNode; className?: string }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className={cn('flex size-9 items-center justify-center rounded-md text-ink-2 hover:bg-hover hover:text-ink', className)}
-    >
-      {children}
-    </button>
-  )
+function formatLong(iso: string) {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
 }
 
-function TextButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+/** A pop-up button: shows the current choice, opens the system menu. */
+function PopUp({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className="text-[13px] text-ink-2 underline decoration-rule-strong underline-offset-4 hover:text-accent hover:decoration-accent">
-      {children}
-    </button>
+    <label className="relative flex items-center text-label-2">
+      <span className="sr-only">{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="h-11 max-w-48 appearance-none truncate bg-transparent pr-6 text-right text-body outline-none">
+        {children}
+      </select>
+      <ChevronsUpDown size={15} className="pointer-events-none absolute right-0" aria-hidden />
+    </label>
   )
 }
 
@@ -193,17 +189,17 @@ function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string
   }
 
   return (
-    <div className="flex flex-1 flex-wrap items-center gap-1.5">
+    <div className="flex min-h-11 flex-wrap items-center gap-1.5 px-4 py-2">
       {tags.map((tag) => (
-        <span key={tag} className="flex items-center gap-1 rounded-full bg-tint py-0.5 pr-1 pl-2.5 text-[13px]">
+        <span key={tag} className="flex h-7 items-center gap-1 rounded-full bg-fill-3 pr-1 pl-3 text-subhead">
           #{tag}
           <button
             type="button"
             aria-label={`Remove tag ${tag}`}
             onClick={() => onChange(tags.filter((t) => t !== tag))}
-            className="flex size-4 items-center justify-center rounded-full text-ink-3 hover:bg-hover hover:text-ink"
+            className="flex size-5 items-center justify-center rounded-full text-label-2 hover:bg-fill-2"
           >
-            <X size={11} />
+            <X size={12} strokeWidth={2.6} />
           </button>
         </span>
       ))}
@@ -219,15 +215,15 @@ function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string
           }
         }}
         onBlur={add}
-        placeholder={tags.length ? '' : 'Add a tag'}
-        aria-label="Add tag"
-        className="min-w-20 flex-1 bg-transparent py-0.5 text-sm outline-none placeholder:text-ink-3"
+        placeholder="Add Tag"
+        aria-label="Add Tag"
+        className="h-7 min-w-24 flex-1 bg-transparent text-body outline-none"
       />
     </div>
   )
 }
 
-function Checklist({ item }: { item: Item }) {
+function Steps({ item, color }: { item: Item; color: string }) {
   const [text, setText] = useState('')
   const list = item.checklist
   const save = (checklist: Item['checklist']) => updateItem(item.id, { checklist })
@@ -240,53 +236,44 @@ function Checklist({ item }: { item: Item }) {
   }
 
   return (
-    <section className="flex flex-col gap-1.5">
-      <h3 className="flex items-baseline justify-between font-display text-base">
-        Steps
-        {list.length > 0 && (
-          <span className="font-sans text-[13px] text-ink-2 tabular-nums">
-            {done} of {list.length}
-          </span>
-        )}
-      </h3>
-      <ul className="flex flex-col">
-        {list.map((entry) => (
-          <li key={entry.id} className="group/step flex min-h-10 items-center gap-3 border-b border-rule">
-            <TickBox
-              size={16}
-              checked={entry.done}
-              label={`Done: ${entry.text}`}
-              onToggle={() => save(list.map((c) => (c.id === entry.id ? { ...c, done: !c.done } : c)))}
-            />
-            <InlineInput
-              value={entry.text}
-              onCommit={(value) => save(list.map((c) => (c.id === entry.id ? { ...c, text: value } : c)))}
-              aria-label="Step"
-              className={cn('flex-1 text-[15px]', entry.done && 'text-ink-3')}
-            />
-            <button
-              type="button"
-              aria-label={`Remove ${entry.text}`}
-              onClick={() => save(list.filter((c) => c.id !== entry.id))}
-              className="flex size-7 items-center justify-center rounded-md text-ink-3 opacity-0 group-hover/step:opacity-100 hover:text-danger focus:opacity-100 max-sm:opacity-100"
-            >
-              <X size={14} />
-            </button>
-          </li>
-        ))}
-      </ul>
-      <label className="flex min-h-10 items-center gap-3 text-ink-3 focus-within:text-accent">
-        <Plus size={16} aria-hidden />
+    <GroupedSection header={list.length > 0 ? `Steps · ${done} of ${list.length} Done` : 'Steps'}>
+      {list.map((entry) => (
+        <GroupedRow key={entry.id} className="group/step gap-3">
+          <CheckCircle
+            size={20}
+            color={color}
+            checked={entry.done}
+            label={`Done: ${entry.text}`}
+            onToggle={() => save(list.map((c) => (c.id === entry.id ? { ...c, done: !c.done } : c)))}
+          />
+          <InlineInput
+            value={entry.text}
+            onCommit={(value) => save(list.map((c) => (c.id === entry.id ? { ...c, text: value } : c)))}
+            aria-label="Step"
+            className={cn('flex-1 text-body', entry.done && 'text-label-2')}
+          />
+          <button
+            type="button"
+            aria-label={`Remove ${entry.text}`}
+            onClick={() => save(list.filter((c) => c.id !== entry.id))}
+            className="flex size-7 items-center justify-center rounded-full text-label-3 opacity-0 group-hover/step:opacity-100 hover:text-red focus:opacity-100 [@media(hover:none)]:opacity-100"
+          >
+            <X size={15} />
+          </button>
+        </GroupedRow>
+      ))}
+      <GroupedRow className="gap-3">
+        <Plus size={20} className="text-tint" aria-hidden />
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && add()}
           onBlur={add}
-          placeholder="Add a step"
-          aria-label="Add a step"
-          className="flex-1 bg-transparent text-[15px] text-ink caret-accent outline-none placeholder:text-ink-3"
+          placeholder="Add Step"
+          aria-label="Add Step"
+          className="h-11 flex-1 bg-transparent text-body caret-tint outline-none"
         />
-      </label>
-    </section>
+      </GroupedRow>
+    </GroupedSection>
   )
 }

@@ -1,5 +1,5 @@
 import { db } from './db'
-import type { Group, Item, Plan } from './types'
+import { COLOR_NAMES, type Group, type Item, type Plan } from './types'
 
 export interface Backup {
   app: 'planvoice'
@@ -33,7 +33,8 @@ export function parseBackup(text: string): Backup {
 export async function restoreBackup(backup: Backup): Promise<void> {
   await db.transaction('rw', db.plans, db.groups, db.items, async () => {
     await Promise.all([db.plans.clear(), db.groups.clear(), db.items.clear()])
-    await db.plans.bulkAdd(backup.plans)
+    // Backups made before plans had colours get one.
+    await db.plans.bulkAdd(backup.plans.map((p, i) => ({ ...p, color: p.color ?? COLOR_NAMES[i % COLOR_NAMES.length] })))
     await db.groups.bulkAdd(backup.groups)
     await db.items.bulkAdd(backup.items)
   })

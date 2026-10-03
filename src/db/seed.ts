@@ -1,6 +1,6 @@
 import { toISODate } from '../lib/dates'
 import { newId } from '../lib/id'
-import type { Group, GroupColor, Item, Plan } from './types'
+import type { ColorName, Group, Item, Plan } from './types'
 
 /** First-run content: a short tour, and a realistic example plan to poke at. */
 export function seedData(today: Date = new Date()): { plans: Plan[]; groups: Group[]; items: Item[] } {
@@ -10,12 +10,12 @@ export function seedData(today: Date = new Date()): { plans: Plan[]; groups: Gro
   const groups: Group[] = []
   const items: Item[] = []
 
-  const plan = (title: string, icon: string, description: string) => {
-    const p: Plan = { id: newId(), title, icon, description, view: 'list', hideDone: false, position: plans.length + 1, createdAt: now, updatedAt: now }
+  const plan = (title: string, color: ColorName, description: string) => {
+    const p: Plan = { id: newId(), title, color, icon: '', description, view: 'list', hideDone: false, position: plans.length + 1, createdAt: now, updatedAt: now }
     plans.push(p)
     return p
   }
-  const group = (p: Plan, name: string, color: GroupColor) => {
+  const group = (p: Plan, name: string, color: ColorName) => {
     const g: Group = { id: newId(), planId: p.id, name, color, position: groups.filter((x) => x.planId === p.id).length + 1, createdAt: now }
     groups.push(g)
     return g
@@ -40,8 +40,8 @@ export function seedData(today: Date = new Date()): { plans: Plan[]; groups: Gro
   }
   const steps = (...texts: [string, boolean][]) => texts.map(([text, done]) => ({ id: newId(), text, done }))
 
-  const lisbon = plan('Lisbon long weekend', '🧳', 'Four days in Lisbon with Sam. Flying out Thursday evening.')
-  const travel = group(lisbon, 'Flights & stay', 'blue')
+  const lisbon = plan('Lisbon Long Weekend', 'orange', 'Four days in Lisbon with Sam. Flying out Thursday evening.')
+  const travel = group(lisbon, 'Flights & Stay', 'blue')
   item(travel, 'Book flights', { status: 'done', notes: 'Evening flight out, Monday afternoon back.' })
   item(travel, 'Pick an apartment in Alfama or Graça', {
     status: 'doing',
@@ -50,7 +50,7 @@ export function seedData(today: Date = new Date()): { plans: Plan[]; groups: Gro
     checklist: steps(['Shortlist three places', true], ['Check reviews for street noise', false], ['Book and pay deposit', false]),
   })
   item(travel, 'Check passport expiry dates', { dueDate: inDays(2) })
-  const todo = group(lisbon, 'Things to do', 'orange')
+  const todo = group(lisbon, 'Things to Do', 'orange')
   item(todo, 'Ride tram 28 early, before the queues', { tags: ['morning'] })
   item(todo, 'Sunset at Miradouro da Senhora do Monte', { tags: ['evening'] })
   item(todo, 'Day trip to Sintra', { priority: 'medium', dueDate: inDays(9), notes: 'Train from Rossio, about 40 minutes. Go on a weekday.' })
@@ -60,13 +60,13 @@ export function seedData(today: Date = new Date()): { plans: Plan[]; groups: Gro
   item(packing, 'Travel adapter (type F)', { status: 'done' })
   item(packing, 'Light rain jacket')
 
-  const welcome = plan('How Planvoice works', '👋', 'A two-minute tour. Delete this plan whenever you like.')
-  const basics = group(welcome, 'The basics', 'purple')
+  const welcome = plan('Getting Started', 'blue', 'A quick tour. Delete this plan whenever you like.')
+  const basics = group(welcome, 'The Basics', 'blue')
   item(basics, 'Open an item to add a due date, priority, steps or notes', { priority: 'high' })
-  item(basics, 'Drag items to reorder them or move them to another group', { tags: ['tip'] })
+  item(basics, 'Drag items or whole groups to reorder them', { tags: ['tip'] })
   item(basics, 'Switch between List and Board at the top of a plan', { tags: ['tip'] })
-  item(basics, 'Tick the box when something is done', { status: 'done' })
-  const soon = group(welcome, 'Coming soon', 'gray')
+  item(basics, 'Tap the circle when something is done', { status: 'done' })
+  const soon = group(welcome, 'Coming Soon', 'purple')
   item(soon, 'Voice input: say it, and it lands in the right group', {
     checklist: steps(['Speech to text', false], ['Preview before saving', false]),
   })

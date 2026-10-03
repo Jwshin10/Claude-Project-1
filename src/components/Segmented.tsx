@@ -2,31 +2,34 @@ import { cn } from '../lib/cn'
 
 interface Props<T extends string> {
   label: string
-  options: { value: T; label: string; className?: string }[]
+  options: { value: T; label: string }[]
   value: T
   onChange: (value: T) => void
-  size?: 'sm' | 'md'
+  className?: string
 }
 
-export function Segmented<T extends string>({ label, options, value, onChange, size = 'md' }: Props<T>) {
+/** An Apple segmented control: equal-width segments, the selected one raised. */
+export function Segmented<T extends string>({ label, options, value, onChange, className }: Props<T>) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex w-fit flex-wrap rounded-lg bg-tint p-[3px]">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            'rounded-md font-medium transition-colors',
-            size === 'sm' ? 'px-2.5 py-[3px] text-[13px]' : 'px-3.5 py-1 text-[13.5px]',
-            value === o.value ? cn('bg-card shadow-paper', o.className ?? 'text-ink') : 'text-ink-2 hover:text-ink',
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
+    <div role="radiogroup" aria-label={label} className={cn('grid auto-cols-fr grid-flow-col rounded-[9px] bg-fill-3 p-[2px]', className)}>
+      {options.map((o) => {
+        const selected = value === o.value
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'h-7 rounded-[7px] px-3 text-footnote whitespace-nowrap transition-[background-color,box-shadow] duration-150',
+              selected ? 'bg-[var(--selected-segment)] font-semibold shadow-[0_3px_8px_rgba(0,0,0,0.12),0_3px_1px_rgba(0,0,0,0.04)]' : 'font-medium text-label hover:bg-fill-4',
+            )}
+          >
+            {o.label}
+          </button>
+        )
+      })}
     </div>
   )
 }
