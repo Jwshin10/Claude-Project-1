@@ -26,6 +26,3 @@ dist-ssr
 # vite-plugin-pwa dev output
 dev-dist
 dist-artifact
-
-# Third-party skill without a license (Apple HIG summary); install locally, see README
-.claude/skills/apple-hig/

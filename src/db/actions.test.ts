@@ -116,22 +116,3 @@ describe('backup', () => {
     expect(() => parseBackup('{"foo":1}')).toThrow('not a Planvoice backup')
   })
 })
-
-describe('plan colours', () => {
-  it('gives new plans a colour, cycling through the palette', async () => {
-    const a = await createPlan()
-    const b = await createPlan()
-    const [pa, pb] = [await db.plans.get(a), await db.plans.get(b)]
-    expect(pa?.color).toBeTruthy()
-    expect(pa?.color).not.toBe(pb?.color)
-  })
-
-  it('fills in a colour when restoring a backup from before plans had colours', async () => {
-    const planId = await createPlan({ title: 'Old' })
-    const backup = await exportBackup()
-    const legacy = { ...backup, plans: backup.plans.map(({ color: _color, ...rest }) => rest) }
-    await deletePlan(planId)
-    await restoreBackup(parseBackup(JSON.stringify(legacy)))
-    expect((await db.plans.toArray())[0].color).toBeTruthy()
-  })
-})

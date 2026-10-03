@@ -1,23 +1,21 @@
 import { newId } from '../lib/id'
 import { db } from './db'
-import { COLOR_NAMES, type ColorName, type Group, type Item, type ItemFields, type Plan } from './types'
+import { GROUP_COLOR_NAMES, type Group, type GroupColor, type Item, type ItemFields, type Plan } from './types'
 
 // Every mutation in the app goes through this module so that voice commands
 // (phase 2) can reuse exactly the same operations as the UI.
 
 const byPosition = <T extends { position: number }>(a: T, b: T) => a.position - b.position
 
-export async function createPlan(input: { title?: string; color?: ColorName; groups?: string[] } = {}): Promise<string> {
+export async function createPlan(input: { title?: string; icon?: string; groups?: string[] } = {}): Promise<string> {
   const id = newId()
   const now = Date.now()
   await db.transaction('rw', db.plans, db.groups, async () => {
     const last = await db.plans.orderBy('position').last()
-    const count = await db.plans.count()
     await db.plans.add({
       id,
-      title: input.title ?? 'New Plan',
-      color: input.color ?? COLOR_NAMES[count % COLOR_NAMES.length],
-      icon: '',
+      title: input.title ?? 'Untitled plan',
+      icon: input.icon ?? '📋',
       description: '',
       view: 'list',
       hideDone: false,
@@ -31,7 +29,7 @@ export async function createPlan(input: { title?: string; color?: ColorName; gro
         id: newId(),
         planId: id,
         name,
-        color: COLOR_NAMES[i % COLOR_NAMES.length],
+        color: GROUP_COLOR_NAMES[i % GROUP_COLOR_NAMES.length],
         position: i + 1,
         createdAt: now,
       })),
@@ -52,7 +50,7 @@ export async function deletePlan(id: string): Promise<void> {
   })
 }
 
-export async function createGroup(planId: string, name: string, color?: ColorName): Promise<string> {
+export async function createGroup(planId: string, name: string, color?: GroupColor): Promise<string> {
   const id = newId()
   await db.transaction('rw', db.groups, async () => {
     const siblings = await db.groups.where('planId').equals(planId).toArray()
@@ -61,7 +59,7 @@ export async function createGroup(planId: string, name: string, color?: ColorNam
       id,
       planId,
       name,
-      color: color ?? COLOR_NAMES[siblings.length % COLOR_NAMES.length],
+      color: color ?? GROUP_COLOR_NAMES[siblings.length % GROUP_COLOR_NAMES.length],
       position: maxPosition + 1,
       createdAt: Date.now(),
     })

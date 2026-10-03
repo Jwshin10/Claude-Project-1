@@ -7,10 +7,10 @@ interface Props {
   children: (close: () => void) => ReactNode
   align?: 'left' | 'right'
   buttonClassName?: string
+  menuClassName?: string
 }
 
-/** A pull-down menu in the Apple style: material background, label first, symbol last. */
-export function Dropdown({ label, ariaLabel, children, align = 'right', buttonClassName }: Props) {
+export function Dropdown({ label, ariaLabel, children, align = 'right', buttonClassName, menuClassName }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -39,14 +39,18 @@ export function Dropdown({ label, ariaLabel, children, align = 'right', buttonCl
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((o) => !o)}
-        className={cn('flex items-center justify-center rounded-full text-tint transition-colors hover:bg-fill-3', open && 'bg-fill-3', buttonClassName ?? 'size-8')}
+        className={cn('flex items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-hover hover:text-ink', buttonClassName ?? 'size-8')}
       >
         {label}
       </button>
       {open && (
         <div
           role="menu"
-          className={cn('material absolute top-full z-50 mt-1.5 min-w-[16rem] rounded-[13px] p-[5px] shadow-float', align === 'right' ? 'right-0' : 'left-0')}
+          className={cn(
+            'absolute top-full z-50 mt-1.5 min-w-48 rounded-[10px] border border-rule-strong bg-card p-1.5 shadow-paper',
+            align === 'right' ? 'right-0' : 'left-0',
+            menuClassName,
+          )}
         >
           {children(() => setOpen(false))}
         </div>
@@ -55,27 +59,19 @@ export function Dropdown({ label, ariaLabel, children, align = 'right', buttonCl
   )
 }
 
-export function MenuItem({ onClick, children, icon, destructive }: { onClick: () => void; children: ReactNode; icon?: ReactNode; destructive?: boolean }) {
+export function MenuItem({ onClick, children, danger }: { onClick: () => void; children: ReactNode; danger?: boolean }) {
   return (
     <button
       type="button"
       role="menuitem"
       onClick={onClick}
-      className={cn(
-        'flex h-9 w-full items-center justify-between gap-6 rounded-[8px] px-2.5 text-left text-body hover:bg-fill-3',
-        destructive ? 'text-red' : 'text-label',
-      )}
+      className={cn('flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm hover:bg-hover', danger ? 'text-danger' : 'text-ink')}
     >
-      <span>{children}</span>
-      {icon && <span className="flex shrink-0 opacity-90">{icon}</span>}
+      {children}
     </button>
   )
 }
 
 export function MenuSeparator() {
-  return <div className="mx-2.5 my-[5px] h-px bg-separator" />
-}
-
-export function MenuLabel({ children }: { children: ReactNode }) {
-  return <p className="px-2.5 pt-1.5 pb-1 text-footnote text-label-2">{children}</p>
+  return <div className="mx-1 my-1.5 h-px bg-rule" />
 }

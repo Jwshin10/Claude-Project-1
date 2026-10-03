@@ -3,11 +3,10 @@ import { getConfirm, subscribeConfirm, type ConfirmRequest } from '../lib/confir
 
 export function ConfirmHost() {
   const request = useSyncExternalStore(subscribeConfirm, getConfirm)
-  return request ? <Alert key={request.title + request.message} request={request} /> : null
+  return request ? <ConfirmDialog key={request.title + request.message} request={request} /> : null
 }
 
-/** An Apple alert: title, short message, Cancel and the destructive action side by side. */
-function Alert({ request }: { request: ConfirmRequest }) {
+function ConfirmDialog({ request }: { request: ConfirmRequest }) {
   const ref = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -19,27 +18,21 @@ function Alert({ request }: { request: ConfirmRequest }) {
     <dialog
       ref={ref}
       onClose={() => request.resolve(ref.current?.returnValue === 'ok')}
-      aria-labelledby="alert-title"
-      aria-describedby={request.message ? 'alert-message' : undefined}
-      className="anim-alert m-auto bg-[var(--alert)] backdrop-blur-xl w-[17rem] overflow-hidden rounded-[14px] p-0 text-label shadow-float"
+      aria-labelledby="confirm-title"
+      className="m-auto w-[calc(100%-2rem)] max-w-[24rem] rounded-2xl border border-rule-strong bg-card p-6 text-ink shadow-paper"
     >
-      <form method="dialog">
-        <div className="flex flex-col gap-1 px-4 pt-[19px] pb-[17px] text-center">
-          <h2 id="alert-title" className="text-[17px] leading-snug font-semibold">
+      <form method="dialog" className="flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
+          <h2 id="confirm-title" className="font-display text-xl leading-snug">
             {request.title}
           </h2>
-          {request.message && (
-            <p id="alert-message" className="text-[13px] leading-[1.35]">
-              {request.message}
-            </p>
-          )}
+          {request.message && <p className="text-[14.5px] text-ink-2">{request.message}</p>}
         </div>
-        {/* No default button, so people read before choosing. */}
-        <div className="grid grid-cols-2 border-t border-separator text-[17px]">
-          <button value="cancel" className="h-11 border-r border-separator text-tint hover:bg-fill-4">
+        <div className="flex justify-end gap-2">
+          <button value="cancel" className="h-9 rounded-lg px-3.5 text-sm font-medium text-ink-2 hover:bg-hover hover:text-ink">
             Cancel
           </button>
-          <button value="ok" className="h-11 font-semibold text-red hover:bg-fill-4">
+          <button value="ok" autoFocus className="h-9 rounded-lg bg-danger px-3.5 text-sm font-semibold text-danger-ink hover:brightness-110">
             {request.confirmLabel}
           </button>
         </div>

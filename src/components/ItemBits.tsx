@@ -1,26 +1,23 @@
-import { ListChecks } from 'lucide-react'
-import { useState, type CSSProperties } from 'react'
+import { CornerDownRight, ListChecks } from 'lucide-react'
+import { useState } from 'react'
 import { toggleItemDone } from '../db/actions'
 import type { Item, Priority } from '../db/types'
 import { cn } from '../lib/cn'
 import { describeDue } from '../lib/dates'
 import { PRIORITY_LABEL } from '../lib/priority'
 
-interface CheckCircleProps {
+interface TickBoxProps {
   checked: boolean
   onToggle: () => void
   label: string
-  /** Half-filled: started but not finished. */
+  /** Bullet-journal slash for a started task. */
   started?: boolean
   size?: number
-  /** CSS colour for the ring and fill; defaults to the tint colour. */
-  color?: string
 }
 
-/** The round completion button from Reminders: an empty ring, filled in the group's colour when done. */
-export function CheckCircle({ checked, onToggle, label, started, size = 22, color = 'var(--tint)' }: CheckCircleProps) {
-  const [justChecked, setJustChecked] = useState(false)
-  const inner = size - 8
+/** A box ticked by hand: the tick overshoots the box and is drawn when you check it. */
+export function TickBox({ checked, onToggle, label, started, size = 18 }: TickBoxProps) {
+  const [justTicked, setJustTicked] = useState(false)
   return (
     <button
       type="button"
@@ -29,80 +26,101 @@ export function CheckCircle({ checked, onToggle, label, started, size = 22, colo
       aria-label={label}
       onClick={(e) => {
         e.stopPropagation()
-        setJustChecked(!checked)
+        setJustTicked(!checked)
         onToggle()
       }}
       onKeyDown={(e) => e.stopPropagation()}
       className={cn(
-        'relative flex shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors',
-        !checked && !started && 'border-label-3 hover:border-[var(--ring)]',
+        'relative shrink-0 rounded-[5px] border-[1.5px] transition-colors',
+        checked ? 'border-ink-3/70' : started ? 'border-warn' : 'border-ink-3 hover:border-accent',
       )}
-      style={{ width: size, height: size, '--ring': color, ...((checked || started) && { borderColor: color }) } as CSSProperties}
+      style={{ width: size, height: size }}
     >
-      {checked && <span className={cn('rounded-full', justChecked && 'anim-pop')} style={{ width: inner, height: inner, background: color }} />}
+      {checked && (
+        <svg viewBox="0 0 24 24" aria-hidden className={cn('absolute -top-[35%] -right-[30%] size-[150%] text-accent', justTicked && 'tick-animate')}>
+          <path
+            className="tick-path"
+            pathLength={1}
+            d="M4.5 12.8c1.6 1.2 3.1 2.9 4.4 4.9 2.4-5.2 6-9.6 10.6-13.2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
       {started && !checked && (
-        <span className="rounded-full" style={{ width: inner, height: inner, background: `conic-gradient(${color} 0 50%, transparent 0)` }} />
+        <svg viewBox="0 0 16 16" aria-hidden className="absolute inset-0 size-full text-warn">
+          <path d="M4 12 12 4" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+        </svg>
       )}
     </button>
   )
 }
 
-export function StatusCircle({ item, color, size }: { item: Item; color: string; size?: number }) {
+/** An item's status box. "In progress" shows as a slash; ticking it marks the item done. */
+export function StatusCheckbox({ item, size = 18 }: { item: Item; size?: number }) {
   const done = item.status === 'done'
   return (
-    <CheckCircle
+    <TickBox
       checked={done}
       started={item.status === 'doing'}
       onToggle={() => void toggleItemDone(item)}
       label={done ? `Mark "${item.title}" as not done` : `Mark "${item.title}" as done`}
-      color={color}
       size={size}
     />
   )
 }
 
 const PRIORITY_MARK: Record<Priority, string> = { none: '', low: '!', medium: '!!', high: '!!!' }
+const PRIORITY_TONE: Record<Priority, string> = { none: '', low: 'text-ink-3', medium: 'text-warn', high: 'text-danger' }
 
-/** Reminders-style priority marks, set before the title. */
-export function PriorityMark({ priority, color }: { priority: Priority; color: string }) {
+export function PriorityMark({ priority }: { priority: Priority }) {
   if (priority === 'none') return null
   return (
-    <span className="mr-1.5 font-semibold" style={{ color }} title={`${PRIORITY_LABEL[priority]} priority`}>
+    <span className={cn('font-bold tracking-[0.08em]', PRIORITY_TONE[priority])} title={`${PRIORITY_LABEL[priority]} priority`}>
       <span aria-hidden>{PRIORITY_MARK[priority]}</span>
-      <span className="sr-only">{PRIORITY_LABEL[priority]} priority, </span>
+      <span className="sr-only">{PRIORITY_LABEL[priority]} priority</span>
     </span>
   )
 }
 
-/** The secondary lines under an item: its notes, then status, date, steps and tags. */
-export function ItemDetails({ item, className, showNotes = true }: { item: Item; className?: string; showNotes?: boolean }) {
+const DUE_TONE = { overdue: 'text-danger', today: 'highlighter text-ink', soon: 'text-ink', later: 'text-ink-2' }
+
+/** What sits beside an item: progress, due date, priority, checklist, tags. */
+export function ItemMeta({ item, className }: { item: Item; className?: string }) {
   const done = item.status === 'done'
   const due = item.dueDate ? describeDue(item.dueDate) : null
   const checked = item.checklist.filter((c) => c.done).length
-  const notes = showNotes ? item.notes.split('\n').find((line) => line.trim()) : undefined
-  const hasMeta = due || item.checklist.length > 0 || item.tags.length > 0 || item.status === 'doing'
-  if (!notes && !hasMeta) return null
+  const hasAny = due || item.priority !== 'none' || item.checklist.length > 0 || item.notes || item.tags.length > 0 || item.status === 'doing'
+  if (!hasAny) return null
 
   return (
-    <div className={cn('flex min-w-0 flex-col text-subhead text-label-2', className)}>
-      {notes && <p className="truncate">{notes}</p>}
-      {hasMeta && (
-        <p className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 tabular-nums">
-          {item.status === 'doing' && <span className="text-orange">In Progress</span>}
-          {due && <span className={cn(!done && due.tone === 'overdue' && 'text-red')}>{due.label}</span>}
-          {item.checklist.length > 0 && (
-            <span className="inline-flex items-center gap-1">
-              <ListChecks size={13} aria-hidden />
-              {checked} of {item.checklist.length}
-            </span>
-          )}
-          {item.tags.map((tag) => (
-            <span key={tag} className="text-tint">
-              #{tag}
-            </span>
-          ))}
-        </p>
+    <div className={cn('flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[13px] text-ink-2 tabular-nums', done && 'opacity-60', className)}>
+      {item.status === 'doing' && <span className="text-warn">In progress</span>}
+      {due && (
+        <span className={done ? 'text-ink-3' : DUE_TONE[due.tone]}>
+          {due.tone === 'overdue' && !done ? `${due.label}, overdue` : due.label}
+        </span>
       )}
+      {!done && <PriorityMark priority={item.priority} />}
+      {item.checklist.length > 0 && (
+        <span className={cn('inline-flex items-center gap-1 self-center', checked === item.checklist.length && 'text-ok')}>
+          <ListChecks size={13} aria-hidden /> {checked}/{item.checklist.length}
+        </span>
+      )}
+      {item.notes && (
+        <span className="inline-flex self-center" title="Has notes">
+          <CornerDownRight size={13} aria-hidden />
+          <span className="sr-only">Has notes</span>
+        </span>
+      )}
+      {item.tags.map((tag) => (
+        <span key={tag} className="text-ink-2">
+          #{tag}
+        </span>
+      ))}
     </div>
   )
 }

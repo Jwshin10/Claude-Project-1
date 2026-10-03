@@ -2,28 +2,24 @@ export type Status = 'todo' | 'doing' | 'done'
 export type Priority = 'none' | 'low' | 'medium' | 'high'
 export type ViewMode = 'list' | 'board'
 
-// Apple system colours, defined per appearance in index.css. Keys are stored
-// in the database, so never rename them.
-export const COLOR_NAMES = ['blue', 'orange', 'green', 'purple', 'pink', 'red', 'yellow', 'gray'] as const
-export type ColorName = (typeof COLOR_NAMES)[number]
-export const COLOR_LABEL: Record<ColorName, string> = {
-  blue: 'Blue',
-  orange: 'Orange',
-  green: 'Green',
-  purple: 'Purple',
-  pink: 'Pink',
-  red: 'Red',
-  yellow: 'Yellow',
-  gray: 'Gray',
-}
-/** CSS value for a colour name, e.g. var(--c-blue). */
-export const colorVar = (name: ColorName) => `var(--c-${name})`
+// Divider-tab colours. Keys are stored in the database, so rename values, never keys.
+export const GROUP_COLORS = {
+  gray: '#6f7a90',
+  blue: '#3767d6',
+  green: '#2f9461',
+  orange: '#dd7424',
+  purple: '#8657d3',
+  pink: '#cf4f8b',
+  yellow: '#c49306',
+  red: '#d0443e',
+} as const
+
+export type GroupColor = keyof typeof GROUP_COLORS
+export const GROUP_COLOR_NAMES = Object.keys(GROUP_COLORS) as GroupColor[]
 
 export interface Plan {
   id: string
   title: string
-  color: ColorName
-  /** Kept for older backups; no longer shown. */
   icon: string
   description: string
   view: ViewMode
@@ -38,7 +34,7 @@ export interface Group {
   id: string
   planId: string
   name: string
-  color: ColorName
+  color: GroupColor
   position: number
   createdAt: number
 }

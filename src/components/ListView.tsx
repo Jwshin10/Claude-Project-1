@@ -18,27 +18,35 @@ interface Props {
 
 export function ListView({ planId, groups: storedGroups, items, counts, onOpen }: Props) {
   const { groups, groupSortIds, columns, itemsById, activeItem, activeGroup, dndProps } = usePlanDnd(storedGroups, items)
-  const colorOf = (item: Item) => storedGroups.find((g) => g.id === item.groupId)?.color ?? 'blue'
 
   return (
-    <div className="flex flex-col gap-9">
+    <div className="flex flex-col gap-10">
       <DndContext {...dndProps}>
         <SortableContext items={groupSortIds} strategy={verticalListSortingStrategy}>
           {groups.map((group, index) => {
             const ids = columns[group.id] ?? []
+            const count = counts.get(group.id)
             return (
               <SortableGroup key={group.id} group={group}>
                 {(grip) => (
                   <>
-                    <GroupHeader group={group} index={index} groupCount={groups.length} itemCount={counts.get(group.id)?.total ?? 0} grip={grip} />
-                    <GroupDropZone groupId={group.id} itemIds={ids} className="flex min-h-1 flex-col">
-                      {ids.map((id) => {
-                        const item = itemsById.get(id)
-                        return item && <ItemRow key={id} item={item} color={group.color} onOpen={onOpen} />
-                      })}
-                      {/* Inside the drop zone, so an empty group is still easy to drop into. */}
-                      <QuickAdd label="New Item" placeholder="New Item" onAdd={(title) => addItem(group.id, { title })} />
-                    </GroupDropZone>
+                    <GroupHeader
+                      group={group}
+                      index={index}
+                      groupCount={groups.length}
+                      itemCount={count?.total ?? 0}
+                      doneCount={count?.done ?? 0}
+                      grip={grip}
+                    />
+                    <div className="margin-rule">
+                      <GroupDropZone groupId={group.id} itemIds={ids} className="flex min-h-1 flex-col">
+                        {ids.map((id) => {
+                          const item = itemsById.get(id)
+                          return item && <ItemRow key={id} item={item} onOpen={onOpen} />
+                        })}
+                      </GroupDropZone>
+                      <QuickAdd label="Add an item" placeholder="What needs doing?" onAdd={(title) => addItem(group.id, { title })} />
+                    </div>
                   </>
                 )}
               </SortableGroup>
@@ -46,14 +54,12 @@ export function ListView({ planId, groups: storedGroups, items, counts, onOpen }
           })}
         </SortableContext>
         <DragOverlay>
-          {activeItem && <ItemRow item={activeItem} color={colorOf(activeItem)} onOpen={onOpen} overlay />}
+          {activeItem && <ItemRow item={activeItem} onOpen={onOpen} overlay />}
           {activeGroup && <GroupDragPreview group={activeGroup} itemCount={counts.get(activeGroup.id)?.total ?? 0} />}
         </DragOverlay>
       </DndContext>
 
-      <div>
-        <QuickAdd variant="button" label="Add Group" placeholder="Group Name" onAdd={(name) => createGroup(planId, name)} />
-      </div>
+      <QuickAdd variant="tab" label="New group" placeholder="Group name" onAdd={(name) => createGroup(planId, name)} />
     </div>
   )
 }

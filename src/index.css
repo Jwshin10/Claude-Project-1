@@ -1,193 +1,110 @@
 @import 'tailwindcss';
 
 /*
- * Planvoice follows Apple's Human Interface Guidelines: the system font, the
- * system's semantic colours (label / secondaryLabel / separator / fills /
- * grouped backgrounds), and system tint colours for plans and groups. Every
- * colour has light, dark and increased-contrast values.
+ * Planvoice — "the planner on your desk".
+ * Layout: a ruled notebook page. Groups open with coloured binder-divider tabs;
+ * items sit on blue ruled lines left of a red margin rule; today's things get a
+ * highlighter swipe. Ink-blue is the only accent; everything else stays quiet.
+ *
+ * Type: Young Serif (headings — the plan's name, its groups, an item's title)
+ * with Atkinson Hyperlegible Next for everything you read and operate.
  */
 :root {
-  --bg: #ffffff; /* systemBackground */
-  --bg-grouped: #f2f2f7; /* systemGroupedBackground */
-  --bg-elevated: #ffffff; /* secondarySystemGroupedBackground: cells, cards, sheets */
-  --sidebar: #f5f5f7;
-  --material: rgba(250, 250, 252, 0.78); /* bars and menus over content */
-  --alert: rgba(242, 242, 247, 0.97);
-  --label: #1d1d1f;
-  --label-2: rgba(60, 60, 67, 0.62);
-  --label-3: rgba(60, 60, 67, 0.32);
-  --separator: rgba(60, 60, 67, 0.17);
-  --fill: rgba(120, 120, 128, 0.2);
-  --fill-2: rgba(120, 120, 128, 0.16);
-  --fill-3: rgba(118, 118, 128, 0.12);
-  --fill-4: rgba(116, 116, 128, 0.07);
-  --tint: rgb(0, 122, 255);
-  --on-tint: #ffffff;
-  --knob: #ffffff;
-  --selected-segment: #ffffff;
-  --shadow-card: 0 0 0 0.5px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-float: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 10px 40px -8px rgba(0, 0, 0, 0.22);
-
-  /* System colours (HIG 2026 values). */
-  --c-red: rgb(255, 56, 60);
-  --c-orange: rgb(255, 141, 40);
-  --c-yellow: rgb(255, 204, 0);
-  --c-green: rgb(52, 199, 89);
-  --c-blue: rgb(0, 136, 255);
-  --c-purple: rgb(203, 48, 224);
-  --c-pink: rgb(255, 45, 85);
-  --c-gray: rgb(142, 142, 147);
-  --switch-on: var(--c-green);
+  --paper: #fbfcfd; /* page */
+  --desk: #eef1f6; /* sidebar, board ground */
+  --card: #ffffff; /* cards, dialogs, menus */
+  --tint: #f2f5fa; /* quiet fills: segmented controls, chips */
+  --hover: rgba(28, 37, 65, 0.05);
+  --ink: #1c2541; /* blue-black fountain-pen ink */
+  --ink-2: #565f78;
+  --ink-3: #959db1;
+  --rule: #dce6f2; /* ruled lines */
+  --rule-strong: #c9d4e3;
+  --margin: #efb9b9; /* the red margin line */
+  --accent: #2747c9; /* royal-blue ink */
+  --accent-ink: #ffffff;
+  --highlight: rgba(255, 226, 64, 0.55);
+  --highlight-ink: inherit;
+  --danger: #c8323b;
+  --danger-ink: #ffffff;
+  --warn: #a8640a;
+  --ok: #2c8a57;
+  --shadow: 0 1px 0 rgba(28, 37, 65, 0.06), 0 6px 16px -10px rgba(28, 37, 65, 0.25);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #000000;
-    --bg-grouped: #000000;
-    --bg-elevated: #1c1c1e;
-    --sidebar: #161618;
-    --material: rgba(30, 30, 32, 0.78);
-    --alert: rgba(44, 44, 46, 0.97);
-    --label: #ffffff;
-    --label-2: rgba(235, 235, 245, 0.62);
-    --label-3: rgba(235, 235, 245, 0.32);
-    --separator: rgba(84, 84, 88, 0.55);
-    --fill: rgba(120, 120, 128, 0.36);
-    --fill-2: rgba(120, 120, 128, 0.32);
-    --fill-3: rgba(118, 118, 128, 0.24);
-    --fill-4: rgba(118, 118, 128, 0.14);
-    --tint: rgb(10, 132, 255);
-    --knob: #ffffff;
-    --selected-segment: #636366;
-    --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
-    --shadow-float: 0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 12px 40px -6px rgba(0, 0, 0, 0.7);
-    --c-red: rgb(255, 66, 69);
-    --c-orange: rgb(255, 146, 48);
-    --c-yellow: rgb(255, 214, 0);
-    --c-green: rgb(48, 209, 88);
-    --c-blue: rgb(0, 145, 255);
-    --c-purple: rgb(219, 52, 242);
-    --c-pink: rgb(255, 55, 95);
+    --paper: #171d2d;
+    --desk: #121726;
+    --card: #1e2638;
+    --tint: #252e43;
+    --hover: rgba(232, 236, 245, 0.06);
+    --ink: #e9ecf3;
+    --ink-2: #a6aec2;
+    --ink-3: #6d778f;
+    --rule: #262f45;
+    --rule-strong: #323c56;
+    --margin: rgba(239, 120, 120, 0.3);
+    --accent: #93a9ff;
+    --accent-ink: #11172a;
+    --highlight: #e8c94a;
+    --highlight-ink: #161c2c;
+    --danger: #f07178;
+  --danger-ink: #1b1220;
+    --danger-ink: #1b1220;
+    --warn: #f0b45a;
+    --ok: #5cc88f;
+    --shadow: 0 1px 0 rgba(0, 0, 0, 0.25), 0 8px 20px -10px rgba(0, 0, 0, 0.6);
     color-scheme: dark;
   }
 }
 
 :root[data-theme='dark'] {
-  --bg: #000000;
-  --bg-grouped: #000000;
-  --bg-elevated: #1c1c1e;
-  --sidebar: #161618;
-  --material: rgba(30, 30, 32, 0.78);
-  --alert: rgba(44, 44, 46, 0.97);
-  --label: #ffffff;
-  --label-2: rgba(235, 235, 245, 0.62);
-  --label-3: rgba(235, 235, 245, 0.32);
-  --separator: rgba(84, 84, 88, 0.55);
-  --fill: rgba(120, 120, 128, 0.36);
-  --fill-2: rgba(120, 120, 128, 0.32);
-  --fill-3: rgba(118, 118, 128, 0.24);
-  --fill-4: rgba(118, 118, 128, 0.14);
-  --tint: rgb(10, 132, 255);
-  --knob: #ffffff;
-  --selected-segment: #636366;
-  --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
-  --shadow-float: 0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 12px 40px -6px rgba(0, 0, 0, 0.7);
-  --c-red: rgb(255, 66, 69);
-  --c-orange: rgb(255, 146, 48);
-  --c-yellow: rgb(255, 214, 0);
-  --c-green: rgb(48, 209, 88);
-  --c-blue: rgb(0, 145, 255);
-  --c-purple: rgb(219, 52, 242);
-  --c-pink: rgb(255, 55, 95);
+  --paper: #171d2d;
+  --desk: #121726;
+  --card: #1e2638;
+  --tint: #252e43;
+  --hover: rgba(232, 236, 245, 0.06);
+  --ink: #e9ecf3;
+  --ink-2: #a6aec2;
+  --ink-3: #6d778f;
+  --rule: #262f45;
+  --rule-strong: #323c56;
+  --margin: rgba(239, 120, 120, 0.3);
+  --accent: #93a9ff;
+  --accent-ink: #11172a;
+  --highlight: #e8c94a;
+  --highlight-ink: #161c2c;
+  --danger: #f07178;
+  --danger-ink: #1b1220;
+  --warn: #f0b45a;
+  --ok: #5cc88f;
+  --shadow: 0 1px 0 rgba(0, 0, 0, 0.25), 0 8px 20px -10px rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
 
-/* Increase Contrast: stronger labels, separators and tints. */
-@media (prefers-contrast: more) {
-  :root {
-    --label-2: rgba(60, 60, 67, 0.82);
-    --label-3: rgba(60, 60, 67, 0.6);
-    --separator: rgba(60, 60, 67, 0.45);
-    --tint: rgb(30, 110, 244);
-    --c-red: rgb(233, 21, 45);
-    --c-orange: rgb(197, 83, 0);
-    --c-yellow: rgb(161, 106, 0);
-    --c-green: rgb(0, 137, 50);
-    --c-blue: rgb(30, 110, 244);
-    --c-purple: rgb(176, 47, 194);
-    --c-pink: rgb(231, 18, 77);
-    --c-gray: rgb(108, 108, 112);
-  }
-}
-
 @theme inline {
-  --color-bg: var(--bg);
-  --color-grouped: var(--bg-grouped);
-  --color-elevated: var(--bg-elevated);
-  --color-sidebar: var(--sidebar);
-  --color-material: var(--material);
-  --color-label: var(--label);
-  --color-label-2: var(--label-2);
-  --color-label-3: var(--label-3);
-  --color-separator: var(--separator);
-  --color-fill: var(--fill);
-  --color-fill-2: var(--fill-2);
-  --color-fill-3: var(--fill-3);
-  --color-fill-4: var(--fill-4);
+  --color-paper: var(--paper);
+  --color-desk: var(--desk);
+  --color-card: var(--card);
   --color-tint: var(--tint);
-  --color-on-tint: var(--on-tint);
-  --color-red: var(--c-red);
-  --color-orange: var(--c-orange);
-  --color-green: var(--c-green);
-  --shadow-card: var(--shadow-card);
-  --shadow-float: var(--shadow-float);
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro', system-ui, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro', system-ui, 'Segoe UI Variable Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-
-  /* Text styles: iOS sizes on phones, a step smaller on larger screens (see body). */
-  --text-large-title: var(--fs-large-title);
-  --text-large-title--line-height: 1.2;
-  --text-title-2: var(--fs-title-2);
-  --text-title-2--line-height: 1.27;
-  --text-title-3: var(--fs-title-3);
-  --text-title-3--line-height: 1.25;
-  --text-headline: var(--fs-body);
-  --text-headline--line-height: 1.3;
-  --text-body: var(--fs-body);
-  --text-body--line-height: 1.32;
-  --text-callout: var(--fs-callout);
-  --text-callout--line-height: 1.32;
-  --text-subhead: var(--fs-subhead);
-  --text-subhead--line-height: 1.33;
-  --text-footnote: var(--fs-footnote);
-  --text-footnote--line-height: 1.33;
-  --text-caption: var(--fs-caption);
-  --text-caption--line-height: 1.3;
-}
-
-:root {
-  --fs-large-title: 30px;
-  --fs-title-2: 20px;
-  --fs-title-3: 18px;
-  --fs-body: 15px;
-  --fs-callout: 14px;
-  --fs-subhead: 13.5px;
-  --fs-footnote: 12.5px;
-  --fs-caption: 11.5px;
-}
-
-@media (max-width: 767px) {
-  :root {
-    --fs-large-title: 34px;
-    --fs-title-2: 22px;
-    --fs-title-3: 20px;
-    --fs-body: 17px;
-    --fs-callout: 16px;
-    --fs-subhead: 15px;
-    --fs-footnote: 13px;
-    --fs-caption: 12px;
-  }
+  --color-hover: var(--hover);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-margin: var(--margin);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-warn: var(--warn);
+  --color-ok: var(--ok);
+  --shadow-paper: var(--shadow);
+  --font-display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Atkinson Hyperlegible Next Variable', 'Atkinson Hyperlegible Next', ui-sans-serif, system-ui, sans-serif;
 }
 
 html,
@@ -198,102 +115,109 @@ body,
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--label);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-sans);
-  font-size: var(--fs-body);
-  line-height: 1.32;
-  letter-spacing: -0.01em;
+  font-size: 15px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--tint) 28%, transparent);
+  background: var(--highlight);
 }
 
 :focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--tint) 55%, transparent);
-  outline-offset: 1px;
-  border-radius: 6px;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--label-3);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 dialog::backdrop {
-  background: rgba(0, 0, 0, 0.32);
+  background: rgba(18, 23, 38, 0.42);
+  backdrop-filter: blur(2px);
 }
 
-/* Sheets sit one level up: in dark mode they and their cells are lighter than the page. */
-.sheet {
-  --bg-grouped: #f2f2f7;
-  --bg-elevated: #ffffff;
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .sheet {
-    --bg-grouped: #1c1c1e;
-    --bg-elevated: #2c2c2e;
+@layer components {
+  /* A highlighter swipe, slightly ragged at the ends like a real marker. */
+  .highlighter {
+    background-image: linear-gradient(
+      100deg,
+      transparent 0.4em,
+      var(--highlight) 0.55em,
+      var(--highlight) calc(100% - 0.5em),
+      transparent calc(100% - 0.3em)
+    );
+    background-size: 100% 72%;
+    background-position: 0 70%;
+    background-repeat: no-repeat;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    padding-inline: 0.45em;
+    margin-inline: -0.45em;
+    color: var(--highlight-ink);
+  }
+
+  /* Notes are written on ruled lines that track the text's line height. */
+  .lined {
+    --line: 1.75rem;
+    line-height: var(--line);
+    background-image: linear-gradient(transparent calc(var(--line) - 1px), var(--rule) calc(var(--line) - 1px));
+    background-size: 100% var(--line);
+    background-attachment: local;
   }
 }
 
-:root[data-theme='dark'] .sheet {
-  --bg-grouped: #1c1c1e;
-  --bg-elevated: #2c2c2e;
+/* Completing an item: the tick is drawn, then a pen line strikes the title. */
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
-/* Bars and menus that float over scrolling content. */
-.material {
-  background: var(--material);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-  backdrop-filter: saturate(180%) blur(24px);
+.tick-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
 }
 
-@keyframes sheet-in {
+.tick-animate .tick-path {
+  animation: draw 260ms cubic-bezier(0.6, 0, 0.3, 1) both;
+}
+
+.struck {
+  background-image: linear-gradient(var(--ink-3), var(--ink-3));
+  background-size: 100% 1.5px;
+  background-position: 0 55%;
+  background-repeat: no-repeat;
+  transition: background-size 280ms cubic-bezier(0.6, 0, 0.3, 1) 120ms;
+}
+
+.unstruck {
+  background-image: linear-gradient(var(--ink-3), var(--ink-3));
+  background-size: 0% 1.5px;
+  background-position: 0 55%;
+  background-repeat: no-repeat;
+}
+
+@keyframes dialog-in {
   from {
     opacity: 0;
-    transform: translateY(16px) scale(0.98);
+    transform: translateY(8px) scale(0.985);
   }
 }
 
-@keyframes sheet-up {
-  from {
-    transform: translateY(100%);
-  }
-}
-
-@keyframes alert-in {
-  from {
-    opacity: 0;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes pop {
-  from {
-    transform: scale(0.4);
-  }
-}
-
-.anim-sheet {
-  animation: sheet-in 220ms cubic-bezier(0.2, 0.9, 0.25, 1);
-}
-
-@media (max-width: 767px) {
-  .anim-sheet {
-    animation: sheet-up 320ms cubic-bezier(0.2, 0.9, 0.25, 1);
-  }
-}
-
-.anim-alert {
-  animation: alert-in 200ms cubic-bezier(0.2, 0.9, 0.25, 1);
-}
-
-.anim-pop {
-  animation: pop 180ms cubic-bezier(0.3, 1.4, 0.5, 1);
+dialog[open] {
+  animation: dialog-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -303,4 +227,9 @@ dialog::backdrop {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* The red margin rule running down a group's items, right of the checkboxes. */
+.margin-rule {
+  background: linear-gradient(var(--margin), var(--margin)) no-repeat 2.5rem 0 / 1px 100%;
 }

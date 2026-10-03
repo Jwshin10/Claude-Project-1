@@ -1,18 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus } from 'lucide-react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { PlanList } from '../components/PlanList'
 import { createPlan } from '../db/actions'
 import { db } from '../db/db'
-import { useIsCompact } from '../lib/useMediaQuery'
 
 export function HomePage() {
-  const compact = useIsCompact()
   const first = useLiveQuery(async () => (await db.plans.orderBy('position').first()) ?? null)
   const navigate = useNavigate()
 
-  // On phones the plan list is the first screen, as in Reminders.
-  if (compact) return <PlanList variant="screen" />
   if (first === undefined) return null
   if (first) return <Navigate to={`/plan/${first.id}`} replace />
 
@@ -22,15 +17,18 @@ export function HomePage() {
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-      <h1 className="text-title-2 font-bold">No Plans</h1>
-      <p className="max-w-[22rem] text-subhead text-label-2">Make a plan for a trip, a project or your week, then split it into groups.</p>
+    <div className="mx-auto flex h-full max-w-[30rem] flex-col justify-center gap-5 px-6 py-12">
+      <h1 className="font-display text-[2.2rem] leading-tight">A blank page.</h1>
+      <p className="text-ink-2">
+        Start a plan for whatever is on your mind: a trip, a move, a project, this week. Split it into groups like
+        <span className="text-ink"> Flights</span> or <span className="text-ink">Things to do</span>, then add items to each.
+      </p>
       <button
         type="button"
         onClick={start}
-        className="mt-4 flex h-[38px] items-center gap-1.5 rounded-full bg-tint px-5 text-body font-semibold text-on-tint hover:brightness-110"
+        className="flex h-10 w-fit items-center gap-2 rounded-lg bg-accent px-4 text-[15px] font-semibold text-accent-ink hover:brightness-110"
       >
-        <Plus size={18} strokeWidth={2.4} /> New Plan
+        <Plus size={17} /> Start a plan
       </button>
     </div>
   )

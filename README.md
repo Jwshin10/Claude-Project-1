@@ -1,6 +1,6 @@
 # Planvoice
 
-A planner for plans, groups and to-dos, designed to Apple's Human Interface Guidelines. Voice input is on the way.
+A Notion-style planner for plans, groups and to-dos — with voice input on the way.
 
 Everything is stored **only on your device** (in the browser's IndexedDB). There is no account and no server.
 
@@ -28,20 +28,6 @@ npm test         # unit tests (data layer, date helpers)
 npm run lint
 npm run build    # production build in dist/
 ```
-
-## Design
-
-The UI follows Apple's Human Interface Guidelines, modelled on Reminders: the
-system font, system colours (light, dark and increased contrast), inset grouped
-lists, sheets, alerts, segmented controls and switches. On phones the plan list
-is the first screen; on wider screens it is a sidebar.
-
-Two Claude Code skills guide design work in this repo:
-
-- `.claude/skills/frontend-design` (Anthropic, Apache 2.0) is included.
-- The Apple HIG skill isn't checked in because it has no license. Install it
-  locally with:
-  `git clone --depth 1 https://github.com/ykswang/apple-hig-skill /tmp/hig && cp -r /tmp/hig/skills/apple-hig ~/.claude/skills/`
 
 ## Project layout
 

@@ -1,13 +1,12 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { CSSProperties, KeyboardEvent } from 'react'
-import { colorVar, type ColorName, type Item } from '../db/types'
+import type { Item } from '../db/types'
 import { cn } from '../lib/cn'
-import { ItemDetails, PriorityMark, StatusCircle } from './ItemBits'
+import { ItemMeta, StatusCheckbox } from './ItemBits'
 
 interface Props {
   item: Item
-  color: ColorName
   onOpen: (id: string) => void
   /** Rendered inside the DragOverlay: not sortable, lifted off the page. */
   overlay?: boolean
@@ -21,7 +20,7 @@ function useSortableItem(id: string, disabled: boolean) {
 
 // The title is a real button so keyboard users can open the item; its keys are
 // kept from the row, where Space/Enter start a keyboard drag instead.
-function Title({ item, color, onOpen, className }: Omit<Props, 'overlay'> & { className?: string }) {
+function TitleButton({ item, onOpen, className }: Props & { className?: string }) {
   const done = item.status === 'done'
   return (
     <button
@@ -31,16 +30,14 @@ function Title({ item, color, onOpen, className }: Omit<Props, 'overlay'> & { cl
         onOpen(item.id)
       }}
       onKeyDown={(e: KeyboardEvent) => e.stopPropagation()}
-      className={cn('min-w-0 text-left break-words', done && 'text-label-2', className)}
+      className={cn('min-w-0 text-left break-words', className)}
     >
-      {!done && <PriorityMark priority={item.priority} color={colorVar(color)} />}
-      {item.title}
+      <span className={cn(done ? 'struck text-ink-3' : 'unstruck')}>{item.title}</span>
     </button>
   )
 }
 
-/** A Reminders row: the circle, then the title and its details over an inset separator. */
-export function ItemRow({ item, color, onOpen, overlay = false }: Props) {
+export function ItemRow({ item, onOpen, overlay = false }: Props) {
   const { setNodeRef, attributes, listeners, style, isDragging } = useSortableItem(item.id, overlay)
   return (
     <div
@@ -50,24 +47,23 @@ export function ItemRow({ item, color, onOpen, overlay = false }: Props) {
       {...(overlay ? {} : listeners)}
       onClick={() => onOpen(item.id)}
       className={cn(
-        'group/row flex cursor-default touch-manipulation items-start gap-3 rounded-[10px] pl-1',
-        isDragging && 'opacity-0',
-        overlay && 'cursor-grabbing bg-elevated shadow-float',
+        'grid min-h-11 cursor-pointer touch-manipulation grid-cols-[2.5rem_1fr] items-start border-b border-rule hover:bg-hover',
+        isDragging && 'opacity-25',
+        overlay && 'cursor-grabbing rounded-md border-transparent bg-card shadow-paper',
       )}
     >
-      <div className="flex h-[44px] items-center">
-        <StatusCircle item={item} color={colorVar(color)} />
+      <div className="flex justify-center pt-[13px]">
+        <StatusCheckbox item={item} />
       </div>
-      <div className={cn('flex min-h-[44px] min-w-0 flex-1 flex-col justify-center gap-0.5 py-2.5 pr-2', !overlay && 'border-b border-separator')}>
-        <Title item={item} color={color} onOpen={onOpen} className="text-body" />
-        <ItemDetails item={item} />
+      <div className="flex min-w-0 flex-col gap-0.5 py-2.5 pr-2 pl-3.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+        <TitleButton item={item} onOpen={onOpen} className="text-[15px] leading-6" />
+        <ItemMeta item={item} className="shrink-0 sm:justify-end" />
       </div>
     </div>
   )
 }
 
-/** A card in the board view. */
-export function ItemCard({ item, color, onOpen, overlay = false }: Props) {
+export function ItemCard({ item, onOpen, overlay = false }: Props) {
   const { setNodeRef, attributes, listeners, style, isDragging } = useSortableItem(item.id, overlay)
   return (
     <div
@@ -77,18 +73,18 @@ export function ItemCard({ item, color, onOpen, overlay = false }: Props) {
       {...(overlay ? {} : listeners)}
       onClick={() => onOpen(item.id)}
       className={cn(
-        'flex cursor-default touch-manipulation items-start gap-2.5 rounded-[12px] bg-elevated p-3 shadow-card transition-shadow hover:shadow-[var(--shadow-card),0_4px_14px_-6px_rgba(0,0,0,0.12)]',
-        isDragging && 'opacity-0',
-        overlay && 'scale-[1.02] cursor-grabbing shadow-float',
+        'flex cursor-pointer touch-manipulation flex-col gap-2 rounded-md border border-rule-strong bg-card px-3 py-2.5 shadow-paper transition-colors hover:border-ink-3',
+        isDragging && 'opacity-25',
+        overlay && '-rotate-1 cursor-grabbing',
       )}
     >
-      <div className="pt-px">
-        <StatusCircle item={item} color={colorVar(color)} size={20} />
+      <div className="flex items-start gap-2.5">
+        <div className="pt-[3px]">
+          <StatusCheckbox item={item} size={16} />
+        </div>
+        <TitleButton item={item} onOpen={onOpen} className="flex-1 text-[14.5px] leading-[1.4]" />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <Title item={item} color={color} onOpen={onOpen} className="text-callout leading-[1.3]" />
-        <ItemDetails item={item} className="text-footnote" />
-      </div>
+      <ItemMeta item={item} className="pl-[26px] text-[12.5px]" />
     </div>
   )
 }

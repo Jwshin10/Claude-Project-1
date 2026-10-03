@@ -24,8 +24,8 @@ export default defineConfig({
           name: 'Planvoice',
           short_name: 'Planvoice',
           description: 'Plans, groups and to-dos — with voice input.',
-          theme_color: '#ffffff',
-          background_color: '#ffffff',
+          theme_color: '#1c2541',
+          background_color: '#fbfcfd',
           display: 'standalone',
           icons: [
             { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
