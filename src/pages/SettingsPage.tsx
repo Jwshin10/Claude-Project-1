@@ -3,6 +3,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { deleteAllData, exportBackup, parseBackup, restoreBackup } from '../db/backup'
 import { cn } from '../lib/cn'
+import { confirmAction } from '../lib/confirm'
 import { toISODate } from '../lib/dates'
 
 export function SettingsPage() {
@@ -24,7 +25,12 @@ export function SettingsPage() {
   const restore = async (file: File) => {
     try {
       const backup = parseBackup(await file.text())
-      if (!window.confirm(`Replace everything on this device with ${backup.plans.length} plans from this backup?`)) return
+      const ok = await confirmAction({
+        title: 'Replace everything on this device?',
+        message: `Your current plans will be replaced by the ${backup.plans.length} plans in this backup.`,
+        confirmLabel: 'Replace',
+      })
+      if (!ok) return
       await restoreBackup(backup)
       setMessage({ text: `Restored ${backup.plans.length} plans and ${backup.items.length} items.` })
     } catch (e) {
@@ -33,7 +39,8 @@ export function SettingsPage() {
   }
 
   const wipe = async () => {
-    if (!window.confirm('Delete every plan on this device? This cannot be undone unless you have a backup.')) return
+    const ok = await confirmAction({ title: 'Delete every plan on this device?', message: 'This cannot be undone unless you have a backup.', confirmLabel: 'Delete all' })
+    if (!ok) return
     await deleteAllData()
     navigate('/')
   }

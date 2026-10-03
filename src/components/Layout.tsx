@@ -2,6 +2,7 @@ import { Menu } from 'lucide-react'
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { cn } from '../lib/cn'
+import { ConfirmHost } from './ConfirmHost'
 import { Sidebar } from './Sidebar'
 
 export function Layout() {
@@ -34,6 +35,7 @@ export function Layout() {
           <Outlet />
         </main>
       </div>
+      <ConfirmHost />
     </div>
   )
 }

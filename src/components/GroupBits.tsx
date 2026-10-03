@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { deleteGroup, moveGroup, updateGroup } from '../db/actions'
 import { GROUP_COLOR_NAMES, GROUP_COLORS, type Group } from '../db/types'
 import { cn } from '../lib/cn'
+import { confirmAction } from '../lib/confirm'
 import { Dropdown, MenuItem, MenuSeparator } from './Dropdown'
 import { InlineInput } from './InlineInput'
 
@@ -32,9 +33,12 @@ interface HeaderProps {
 export function GroupHeader({ group, index, groupCount, itemCount, horizontal }: HeaderProps) {
   const color = GROUP_COLORS[group.color]
 
-  const remove = () => {
-    const message = itemCount > 0 ? `Delete "${group.name}" and its ${itemCount} item${itemCount === 1 ? '' : 's'}?` : `Delete "${group.name}"?`
-    if (window.confirm(message)) void deleteGroup(group.id)
+  const remove = async () => {
+    const ok = await confirmAction({
+      title: `Delete "${group.name}"?`,
+      message: itemCount > 0 ? `Its ${itemCount} item${itemCount === 1 ? '' : 's'} will be deleted too.` : undefined,
+    })
+    if (ok) void deleteGroup(group.id)
   }
 
   return (
@@ -91,7 +95,7 @@ export function GroupHeader({ group, index, groupCount, itemCount, horizontal }:
               danger
               onClick={() => {
                 close()
-                remove()
+                void remove()
               }}
             >
               <Trash2 size={14} /> Delete group

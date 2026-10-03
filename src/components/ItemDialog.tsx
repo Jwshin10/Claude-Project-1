@@ -5,6 +5,7 @@ import { deleteItem, moveItem, updateItem } from '../db/actions'
 import { db } from '../db/db'
 import type { Group, Item, Priority, Status } from '../db/types'
 import { cn } from '../lib/cn'
+import { confirmAction } from '../lib/confirm'
 import { newId } from '../lib/id'
 import { PRIORITY_CLASS, PRIORITY_LABEL } from '../lib/priority'
 import { InlineInput } from './InlineInput'
@@ -48,8 +49,8 @@ export function ItemDialog({ itemId, groups, onClose }: { itemId: string; groups
 function ItemEditor({ item, groups, onClose }: { item: Item; groups: Group[]; onClose: () => void }) {
   const save = (patch: Partial<Item>) => updateItem(item.id, patch)
 
-  const remove = () => {
-    if (window.confirm(`Delete "${item.title}"?`)) {
+  const remove = async () => {
+    if (await confirmAction({ title: `Delete "${item.title}"?` })) {
       onClose()
       void deleteItem(item.id)
     }

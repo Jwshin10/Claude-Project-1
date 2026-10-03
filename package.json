@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:artifact": "tsc -b && BUILD_TARGET=artifact vite build && node scripts/artifact-page.mjs",
     "lint": "oxlint",
     "test": "vitest run",
     "preview": "vite preview"

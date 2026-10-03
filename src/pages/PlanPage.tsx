@@ -11,6 +11,7 @@ import { deletePlan, updatePlan } from '../db/actions'
 import { db } from '../db/db'
 import type { Plan, ViewMode } from '../db/types'
 import { cn } from '../lib/cn'
+import { confirmAction } from '../lib/confirm'
 
 const ICONS = ['📋', '✈️', '🏠', '💼', '🎯', '📚', '💪', '🍳', '🎉', '💰', '🛒', '🌱', '🧳', '🎨', '🧠', '❤️', '🚗', '🎓', '🗓️', '⭐', '🔥', '🏖️', '🎵', '👋']
 
@@ -70,7 +71,7 @@ function PlanHeader({ plan, doneCount }: { plan: Plan; doneCount: number }) {
   const focusTitle = (location.state as { focusTitle?: boolean } | null)?.focusTitle ?? false
 
   const remove = async () => {
-    if (!window.confirm(`Delete "${plan.title}" and everything in it?`)) return
+    if (!(await confirmAction({ title: `Delete "${plan.title || 'Untitled plan'}"?`, message: 'All of its groups and items will be deleted too.' }))) return
     await deletePlan(plan.id)
     navigate('/', { replace: true })
   }

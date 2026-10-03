@@ -21,7 +21,7 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
   return (
     <nav className="flex h-full flex-col gap-4 p-3" aria-label="Plans">
       <div className="flex items-center gap-2 px-2 pt-1">
-        <img src="/favicon.svg" alt="" className="size-6" />
+        <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-6" />
         <span className="font-semibold">Planvoice</span>
       </div>
 
