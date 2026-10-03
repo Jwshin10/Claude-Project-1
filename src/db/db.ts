@@ -14,6 +14,10 @@ db.version(1).stores({
   items: 'id, planId, groupId',
 })
 
+// v2 was used briefly by a design that added a colour to plans. The schema is
+// unchanged; declaring it lets browsers that already upgraded keep opening the database.
+db.version(2).stores({})
+
 // Runs once, when the database is first created on this device.
 db.on('populate', async (tx) => {
   const { plans, groups, items } = seedData()

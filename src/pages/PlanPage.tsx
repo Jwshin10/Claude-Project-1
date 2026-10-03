@@ -82,7 +82,7 @@ function PlanHeader({ plan, items }: { plan: Plan; items: Item[] }) {
     <header className="flex flex-col gap-5">
       <div className="flex items-start gap-4">
         <Dropdown
-          label={<span className="text-[28px] leading-none">{plan.icon}</span>}
+          label={<span className="text-[28px] leading-none">{plan.icon || '📋'}</span>}
           ariaLabel="Change sticker"
           align="left"
           buttonClassName="mt-1 size-14 shrink-0 -rotate-3 rounded-xl border border-rule-strong bg-card shadow-paper hover:rotate-0 transition-transform"

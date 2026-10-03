@@ -76,7 +76,7 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
                   {({ isActive }) => (
                     <>
                       <span className="w-5 text-center text-[15px]" aria-hidden>
-                        {plan.icon}
+                        {plan.icon || '📋'}
                       </span>
                       <span className="min-w-0 flex-1 truncate">
                         <span className={cn(isActive && 'highlighter')}>{plan.title || 'Untitled plan'}</span>
