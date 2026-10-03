@@ -1,10 +1,12 @@
 import {
+  closestCenter,
   closestCorners,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -12,11 +14,18 @@ import {
 } from '@dnd-kit/core'
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useMemo, useState } from 'react'
-import { moveItem } from '../db/actions'
+import { moveGroup, moveItem } from '../db/actions'
 import type { Group, Item } from '../db/types'
 
 /** groupId -> ordered item ids */
 export type Columns = Record<string, string[]>
+
+// A group's id is already used by the droppable that holds its items, so the
+// group itself is sorted under a prefixed id.
+const GROUP_PREFIX = 'group:'
+export const groupSortId = (groupId: string) => GROUP_PREFIX + groupId
+const isGroupDrag = (id: UniqueIdentifier) => String(id).startsWith(GROUP_PREFIX)
+const groupIdOf = (id: UniqueIdentifier) => String(id).slice(GROUP_PREFIX.length)
 
 function buildColumns(groups: Group[], items: Item[]): Columns {
   const columns: Columns = Object.fromEntries(groups.map((g) => [g.id, []]))
@@ -31,21 +40,35 @@ function findGroup(id: UniqueIdentifier, columns: Columns): string | undefined {
   return key in columns ? key : Object.keys(columns).find((g) => columns[g].includes(key))
 }
 
+// Groups only land among groups; items only among items and group drop zones.
+const collisionDetection: CollisionDetection = (args) => {
+  const draggingGroup = isGroupDrag(args.active.id)
+  const droppableContainers = args.droppableContainers.filter((c) => (c.data.current?.type === 'group') === draggingGroup)
+  return (draggingGroup ? closestCenter : closestCorners)({ ...args, droppableContainers })
+}
+
 /**
- * Drag-and-drop state shared by the list and board views. Items can be
- * reordered within a group or dragged into another group.
+ * Drag-and-drop shared by the list and board views: items move within and
+ * between groups, and whole groups can be reordered.
  *
  * While dragging (and right after dropping, until the database reports the
- * change) we render from a local `override` so cards don't snap back. The
- * override is tied to the `items` array it was based on, so it is dropped
- * automatically as soon as a fresh query result arrives.
+ * change) we render from local overrides so nothing snaps back. Each override
+ * is tied to the query result it was based on, so it is dropped automatically
+ * as soon as a fresh result arrives.
  */
-export function useItemDnd(groups: Group[], items: Item[]) {
+export function usePlanDnd(groups: Group[], items: Item[]) {
   const built = useMemo(() => buildColumns(groups, items), [groups, items])
   const itemsById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items])
   const [override, setOverride] = useState<{ basis: Item[]; columns: Columns } | null>(null)
+  const [groupOverride, setGroupOverride] = useState<{ basis: Group[]; order: string[] } | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+
   const columns = override?.basis === items ? override.columns : built
+  const orderedGroups = useMemo(() => {
+    if (groupOverride?.basis !== groups) return groups
+    const byId = new Map(groups.map((g) => [g.id, g]))
+    return groupOverride.order.flatMap((id) => byId.get(id) ?? [])
+  }, [groups, groupOverride])
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -56,12 +79,12 @@ export function useItemDnd(groups: Group[], items: Item[]) {
 
   const onDragStart = ({ active }: DragStartEvent) => {
     setActiveId(String(active.id))
-    setOverride({ basis: items, columns })
+    if (!isGroupDrag(active.id)) setOverride({ basis: items, columns })
   }
 
-  // Moving between groups happens during the drag so the target group opens a gap.
+  // Moving an item between groups happens during the drag, so the target group opens a gap.
   const onDragOver = ({ active, over }: DragOverEvent) => {
-    if (!over) return
+    if (!over || isGroupDrag(active.id)) return
     const from = findGroup(active.id, columns)
     const to = findGroup(over.id, columns)
     if (!from || !to || from === to) return
@@ -82,8 +105,23 @@ export function useItemDnd(groups: Group[], items: Item[]) {
     })
   }
 
-  const onDragEnd = ({ active, over }: DragEndEvent) => {
+  const onGroupDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || over.id === active.id) return
+    const ids = orderedGroups.map((g) => g.id)
+    const from = ids.indexOf(groupIdOf(active.id))
+    const to = ids.indexOf(groupIdOf(over.id))
+    if (from === -1 || to === -1) return
+    setGroupOverride({ basis: groups, order: arrayMove(ids, from, to) })
+    void moveGroup(ids[from], to)
+  }
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
     setActiveId(null)
+    if (isGroupDrag(active.id)) {
+      onGroupDragEnd(event)
+      return
+    }
     const groupId = findGroup(active.id, columns)
     if (!over || !groupId) {
       setOverride(null)
@@ -105,9 +143,12 @@ export function useItemDnd(groups: Group[], items: Item[]) {
   }
 
   return {
+    groups: orderedGroups,
+    groupSortIds: orderedGroups.map((g) => groupSortId(g.id)),
     columns,
     itemsById,
-    activeItem: activeId ? itemsById.get(activeId) : undefined,
-    dndProps: { sensors, collisionDetection: closestCorners, onDragStart, onDragOver, onDragEnd, onDragCancel },
+    activeItem: activeId && !isGroupDrag(activeId) ? itemsById.get(activeId) : undefined,
+    activeGroup: activeId && isGroupDrag(activeId) ? groups.find((g) => g.id === groupIdOf(activeId)) : undefined,
+    dndProps: { sensors, collisionDetection, onDragStart, onDragOver, onDragEnd, onDragCancel },
   }
 }

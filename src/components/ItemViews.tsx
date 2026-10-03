@@ -13,7 +13,7 @@ interface Props {
 }
 
 function useSortableItem(id: string, disabled: boolean) {
-  const sortable = useSortable({ id, disabled })
+  const sortable = useSortable({ id, disabled, data: { type: 'item' } })
   const style: CSSProperties = { transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }
   return { ...sortable, style }
 }

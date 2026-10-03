@@ -1,13 +1,16 @@
 import { useDroppable } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, MoreHorizontal, Trash2 } from 'lucide-react'
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, GripVertical, MoreHorizontal, Trash2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { deleteGroup, moveGroup, updateGroup } from '../db/actions'
 import { GROUP_COLOR_NAMES, GROUP_COLORS, type Group } from '../db/types'
 import { cn } from '../lib/cn'
 import { confirmAction } from '../lib/confirm'
+import { tabStyle } from '../lib/tab'
 import { Dropdown, MenuItem, MenuSeparator } from './Dropdown'
 import { InlineInput } from './InlineInput'
+import { groupSortId } from './usePlanDnd'
 
 const COLOR_LABEL: Record<string, string> = {
   gray: 'Graphite',
@@ -22,13 +25,54 @@ const COLOR_LABEL: Record<string, string> = {
 
 /** A group's item list: a drop target (even when empty) and a sortable context. */
 export function GroupDropZone({ groupId, itemIds, className, children }: { groupId: string; itemIds: string[]; className?: string; children: ReactNode }) {
-  const { setNodeRef, isOver } = useDroppable({ id: groupId })
+  const { setNodeRef, isOver } = useDroppable({ id: groupId, data: { type: 'container' } })
   return (
     <SortableContext id={groupId} items={itemIds} strategy={verticalListSortingStrategy}>
       <div ref={setNodeRef} className={cn(className, isOver && itemIds.length === 0 && 'bg-[var(--tab-soft)]')}>
         {children}
       </div>
     </SortableContext>
+  )
+}
+
+/** A whole group (tab and items) that can be dragged by the grip on its tab. */
+export function SortableGroup({ group, className, children }: { group: Group; className?: string; children: (grip: ReactNode) => ReactNode }) {
+  const { setNodeRef, setActivatorNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
+    id: groupSortId(group.id),
+    data: { type: 'group' },
+  })
+  return (
+    <section
+      ref={setNodeRef}
+      aria-label={group.name}
+      style={{ ...tabStyle(group), transform: CSS.Translate.toString(transform), transition }}
+      className={cn(className, isDragging && 'opacity-30')}
+    >
+      {children(
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          aria-label={`Drag to move ${group.name}`}
+          title="Drag to move this group"
+          className="flex h-7 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-ink-3 opacity-40 transition-opacity group-hover/tab:opacity-100 hover:text-ink focus-visible:opacity-100 active:cursor-grabbing [@media(hover:none)]:opacity-100"
+        >
+          <GripVertical size={15} />
+        </button>,
+      )}
+    </section>
+  )
+}
+
+/** What follows the pointer while a group is dragged: just its tab. */
+export function GroupDragPreview({ group, itemCount }: { group: Group; itemCount: number }) {
+  return (
+    <div style={tabStyle(group)} className="flex w-fit -rotate-1 cursor-grabbing items-center gap-2 rounded-lg bg-[var(--tab-soft)] py-1.5 pr-3.5 pl-2 shadow-paper">
+      <GripVertical size={15} className="text-ink-3" aria-hidden />
+      <span className="font-display text-[17px] leading-7">{group.name}</span>
+      <span className="text-[13px] text-ink-2 tabular-nums">{itemCount}</span>
+    </div>
   )
 }
 
@@ -40,10 +84,12 @@ interface HeaderProps {
   doneCount: number
   /** Board columns move left/right rather than up/down. */
   horizontal?: boolean
+  /** The drag grip shown at the start of the tab. */
+  grip?: ReactNode
 }
 
 /** A binder divider: a coloured tab carrying the group's name, over a line in the same colour. */
-export function GroupHeader({ group, index, groupCount, itemCount, doneCount, horizontal }: HeaderProps) {
+export function GroupHeader({ group, index, groupCount, itemCount, doneCount, horizontal, grip }: HeaderProps) {
   const remove = async () => {
     const ok = await confirmAction({
       title: `Delete "${group.name}"?`,
@@ -55,7 +101,8 @@ export function GroupHeader({ group, index, groupCount, itemCount, doneCount, ho
 
   return (
     <div className="flex items-end gap-2 border-b-2 border-[var(--tab)]">
-      <div className="min-w-0 rounded-t-lg bg-[var(--tab-soft)] px-3 pt-1.5 pb-1">
+      <div className="group/tab flex min-w-0 items-center rounded-t-lg bg-[var(--tab-soft)] pt-1.5 pr-3 pb-1 pl-1">
+        {grip}
         <InlineInput
           value={group.name}
           onCommit={(name) => updateGroup(group.id, { name })}

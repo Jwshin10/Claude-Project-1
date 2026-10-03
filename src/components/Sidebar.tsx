@@ -1,21 +1,39 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Settings } from 'lucide-react'
-import { NavLink, useNavigate } from 'react-router-dom'
-import { createPlan } from '../db/actions'
+import { Plus, Settings, X } from 'lucide-react'
+import { NavLink, useMatch, useNavigate } from 'react-router-dom'
+import { createPlan, deletePlan } from '../db/actions'
 import { db } from '../db/db'
+import type { Plan } from '../db/types'
 import { cn } from '../lib/cn'
+import { confirmAction } from '../lib/confirm'
 import { Logo } from './Logo'
 
 export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
   const plans = useLiveQuery(() => db.plans.orderBy('position').toArray())
-  const openCounts = useLiveQuery(async () => {
-    const counts = new Map<string, number>()
+  const counts = useLiveQuery(async () => {
+    const counts = new Map<string, { open: number; total: number }>()
     await db.items.each((item) => {
-      if (item.status !== 'done') counts.set(item.planId, (counts.get(item.planId) ?? 0) + 1)
+      const c = counts.get(item.planId) ?? { open: 0, total: 0 }
+      c.total += 1
+      if (item.status !== 'done') c.open += 1
+      counts.set(item.planId, c)
     })
     return counts
   })
   const navigate = useNavigate()
+  const openPlanId = useMatch('/plan/:planId')?.params.planId
+
+  const removePlan = async (plan: Plan) => {
+    const total = counts?.get(plan.id)?.total ?? 0
+    const ok = await confirmAction({
+      title: `Delete "${plan.title || 'Untitled plan'}"?`,
+      message: total > 0 ? `Its ${total} item${total === 1 ? '' : 's'} and all of its groups will be deleted too. This can't be undone.` : "This can't be undone.",
+      confirmLabel: 'Delete plan',
+    })
+    if (!ok) return
+    await deletePlan(plan.id)
+    if (plan.id === openPlanId) navigate('/', { replace: true })
+  }
 
   const newPlan = async () => {
     const id = await createPlan()
@@ -45,14 +63,14 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
         </div>
         <ul className="flex flex-col gap-px">
           {plans?.map((plan) => {
-            const open = openCounts?.get(plan.id) ?? 0
+            const open = counts?.get(plan.id)?.open ?? 0
             return (
-              <li key={plan.id}>
+              <li key={plan.id} className="group/plan flex items-center rounded-md hover:bg-hover">
                 <NavLink
                   to={`/plan/${plan.id}`}
                   onClick={onNavigate}
                   className={({ isActive }) =>
-                    cn('group flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[14.5px]', isActive ? 'font-semibold text-ink' : 'text-ink-2 hover:bg-hover hover:text-ink')
+                    cn('flex min-w-0 flex-1 items-center gap-2.5 py-[7px] pl-2.5 text-[14.5px]', isActive ? 'font-semibold text-ink' : 'text-ink-2 hover:text-ink')
                   }
                 >
                   {({ isActive }) => (
@@ -71,6 +89,15 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
                     </>
                   )}
                 </NavLink>
+                <button
+                  type="button"
+                  onClick={() => void removePlan(plan)}
+                  aria-label={`Delete ${plan.title || 'Untitled plan'}`}
+                  title="Delete plan"
+                  className="mx-1 flex size-6 shrink-0 items-center justify-center rounded text-ink-3 transition-colors hover:bg-danger/10 hover:text-danger"
+                >
+                  <X size={14} />
+                </button>
               </li>
             )
           })}
